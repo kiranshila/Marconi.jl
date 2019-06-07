@@ -75,6 +75,7 @@ Pkg.add("https://github.com/kiranshila/Marconi.jl")
 
 ## In Publications
 If you use Marconi.jl in your work please cite our work with something along the lines of
+
 "Made possible with Marconi.jl, a Julia Library for DC to Daylight"
 
 ## In Presentations
