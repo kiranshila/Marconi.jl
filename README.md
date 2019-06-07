@@ -38,18 +38,18 @@ the plotting backend.
 
 Currently, one can plot
 * Networks
-..* Smith Chart
-..* Rectangular Plots
-..* Polar Plots
+* Smith Chart
+* Rectangular Plots
+* Polar Plots
 
 * Circles on Smith Charts
-..* Gain Circles
-..* Q Circles
-..* VSWR Circles
-..* Constant-R Circles
-..* Constant-G Circles
-..* Constant-X Circles
-..* Constant-Y Circles
+  * Gain Circles
+  * Q Circles
+  * VSWR Circles
+  * Constant-R Circles
+  * Constant-G Circles
+  * Constant-X Circles
+  * Constant-Y Circles
 
 # Coming Soon
 Depending on the progress of some other libraries, Marconi.jl would like to include
