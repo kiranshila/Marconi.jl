@@ -36,9 +36,8 @@ Also implemented are textbook bilateral and unilateral transistor calculations.
 Marconi.jl uses Plots.jl as the plotting framework with (currently) InspectDR as
 the plotting backend.
 
-Currently, one can plot
-* Networks
-* Smith Chart
+Currently, one can plot networks on
+* Smith Charts
 * Rectangular Plots
 * Polar Plots
 
@@ -75,9 +74,9 @@ Pkg.add("https://github.com/kiranshila/Marconi.jl")
 ```
 
 ## In Publications
-If you use Marconi.jl in your work please cite our work with something along the lines of
+If you use Marconi.jl in your work please cite us with something along the lines of
 
-"Made possible with Marconi.jl, a Julia Library for DC to Daylight"
+~Made possible with Marconi.jl, a Julia Library for DC to Daylight~
 
 ## In Presentations
 Here is a nifty image you can use to show your support.
