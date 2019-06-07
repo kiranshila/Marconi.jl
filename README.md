@@ -1,5 +1,6 @@
 # Marconi.jl
 A Julia Library for DC to Daylight
+
 "Walks like Python, Runs like C" for open source RF/Microwave engineering.
 
 ## Main Features
@@ -8,7 +9,7 @@ library in pure Julia. Most of this package will focus on linear network paramet
 with more advanced non-linear network analysis coming in the future.
 ### File IO
 Marconi.jl supports reading and writing standard Touchstone files with most of
-Touchstone spec implemented including N ports, non standard port impedances, and
+Touchstone spec implemented including n-ports, non standard port impedances, and
 S, Y, Z, H, and G parameter reading.
 
 Marconi.jl currently does not support noise parameters nor per-port impedance.
@@ -37,18 +38,18 @@ the plotting backend.
 
 Currently, one can plot
 * Networks
-** Smith Chart
-** Rectangular Plots
-** Polar Plots
+..* Smith Chart
+..* Rectangular Plots
+..* Polar Plots
 
 * Circles on Smith Charts
-** Gain Circles
-** Q Circles
-** VSWR Circles
-** Constant-R Circles
-** Constant-G Circles
-** Constant-X Circles
-** Constant-Y Circles
+..* Gain Circles
+..* Q Circles
+..* VSWR Circles
+..* Constant-R Circles
+..* Constant-G Circles
+..* Constant-X Circles
+..* Constant-Y Circles
 
 # Coming Soon
 Depending on the progress of some other libraries, Marconi.jl would like to include
