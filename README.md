@@ -64,9 +64,11 @@ in the near future
 
 # Using Marconi.jl
 To use Marconi.jl simply use the Pkg REPL
-`] add https://github.com/kiranshila/Marconi.jl`
-or from Pkg itself
+```julia
+] add https://github.com/kiranshila/Marconi.jl
 ```
+or from Pkg itself
+```julia
 using(Pkg)
 Pkg.add("https://github.com/kiranshila/Marconi.jl")
 ```
