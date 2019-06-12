@@ -1,5 +1,12 @@
 using LinearAlgebra
 
+# Export Network Parameters
+export y2s
+export z2s
+export s2z
+export h2s
+export g2s
+
 """
         y2s(y)
 
@@ -22,7 +29,7 @@ julia> y2s(y_params)
 
 ```
 """
-function y2s(y::Array{T,2};Z0::Number=50.) where {T <: Number}
+function y2s(y::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
     # We have to downcast to complex because of type weirdness in Diagonal
     Gref = Diagonal([1/√(abs(real(Z0))) for i in 1:size(y)[1]])
     Zref = Diagonal([Z0 for i in 1:size(y)[1]])
@@ -54,7 +61,7 @@ julia> z2s(z_params)
 
 ```
 """
-function z2s(z::Array{T,2};Z0::Number=50.) where {T <: Number}
+function z2s(z::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
     Gref = Diagonal([1/√(abs(real(Z0))) for i in 1:size(z)[1]])
     Zref = Diagonal([Z0 for i in 1:size(z)[1]])
 
@@ -63,8 +70,19 @@ function z2s(z::Array{T,2};Z0::Number=50.) where {T <: Number}
                   complex(Gref)^-1
 end
 
-function h2s(h::Array{Number,2};Z0::Number=50.)
+"""
+        s2z(s)
+
+Converts S-Parameters `s` to Z-Parameters. Optionally include reference
+impedance with kwarg `Z0` with `s2z(s,Z0=50)`.
+"""
+function s2z(s::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+    sqrtZref = Diagonal([√(Z0) for i in 1:size(s)[1]])
+    return sqrtZref*(I-s)^-1*(I+s)*sqrtZref
 end
 
-function g2s(g::Array{Number,2};Z0::Number=50.)
+function h2s(h::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+end
+
+function g2s(g::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
 end

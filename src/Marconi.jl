@@ -1,16 +1,14 @@
 module Marconi
-using InspectDR # For Smith Charts
-include("NetworkParameters.jl")
+using PGFPlotsX
 
+ # Network Params
+include("NetworkParameters.jl")
 
 # Package exports
 export readTouchstone
-
-# Export Network Parameters
-export y2s
-export z2s
-export h2s
-export g2s
+export plotSmith
+export plotSmith!
+export plotSmithCircle!
 
 """
 The base Network type for representing n-port linear networks with characteristic impedance Z0.
@@ -23,8 +21,6 @@ mutable struct Network
   s_params::Array{Array{Union{Real,Complex},2},1}
   passive::Bool
   reciprocal::Bool
-  isEquation::Bool
-  equation::Function
 end
 
 # File option enums
@@ -47,7 +43,7 @@ function readTouchstone(filename::String)
   thisZ0 = 50.
 
   # Setup blank network object to build from
-  thisNetwork = Network(0,0,[],[],false,false,false,nothing)
+  thisNetwork = Network(0,0,[],[],false,false)
 
   # Open the file
   open(filename) do f
@@ -123,7 +119,7 @@ end
 
 "Internal function to process touchstone lines"
 function processTouchstoneLine(line::String,freqExp::Real,paramT::paramType,paramF::paramFormat,Z0::T) where {T <: Number}
-  lineParts = split(line," ")
+  lineParts = [data for data in split(line," ") if data != ""]
   frequency = parse(Float64,lineParts[1]) * freqExp
   ports = √((length(lineParts)-1)/2) # Parameters are in two parts for each port
   if mod(ports,1) != 0
@@ -183,9 +179,55 @@ function isReciprocal(network::Network)
   return true
 end
 
-function plotSmith(network::Network,)
-
+function plotSmith(network::Network,parameter::Tuple{Int,Int};
+                  axopts::PGFPlotsX.Options = nothing,
+                  pltopts::PGFPlotsX.Options = nothing)
+  # Collect the data we want
+  data = [s[parameter[1],parameter[2]] for s in network.s_params]
+  # Convert to normalized input impedance
+  data = [(1+datum)/(1-datum) for datum in data]
+  # Split into coordinates
+  data = [(real(z),imag(z)) for z in data]
+  # Create the PGFslotsX axis
+  if axopts == nothing
+    axopts = @pgf {}
+  end
+  if pltopts == nothing
+    pltopts = @pgf {}
+  end
+  p = @pgf SmithChart({axopts...},Plot({pltopts...},Coordinates(data)))
+  # Draw on smith chart
+  return p
 end
+
+function plotSmith!(smith::SmithChart,network::Network,parameter::Tuple{Int,Int};pltopts::PGFPlotsX.Options = nothing)
+  # Collect the data we want
+  data = [s[parameter[1],parameter[2]] for s in network.s_params]
+  # Convert to normalized input impedance
+  data = [(1+datum)/(1-datum) for datum in data]
+  # Split into coordinates
+  data = [(real(z),imag(z)) for z in data]
+  if pltopts == nothing
+    pltopts = @pgf {}
+  end
+  push!(smith,@pgf Plot({pltopts...},Coordinates(data)))
+  return smith
+end
+
+function plotSmithCircle!(smith::SmithChart,xc::A,yc::B,rad::C;opts::PGFPlotsX.Options = nothing) where {A <: Real, B <: Real, C <: Real}
+  # Create an array to represent the circle
+  x = [rad*cosd(v) for v = -180:180]
+  y = [rad*sind(v) for v = -180:180]
+
+  if opts == nothing
+    opts = @pgf {}
+  end
+
+  circle = @pgf Plot({"is smithchart cs", opts...},Coordinates(x.+xc,y.+yc))
+  push!(smith,circle)
+  return smith
+end
+
 
 
 end # Module End

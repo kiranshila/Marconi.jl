@@ -1,0 +1,8 @@
+name = "Marconi"
+uuid = "bbe32c30-8a1d-11e9-18de-655e918680e9"
+authors = ["kiranshila <kiranshila@mail.usf.edu>"]
+version = "0.1.0"
+
+[deps]
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
