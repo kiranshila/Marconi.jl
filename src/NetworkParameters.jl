@@ -4,8 +4,6 @@ using LinearAlgebra
 export y2s
 export z2s
 export s2z
-export h2s
-export g2s
 
 """
         y2s(y)

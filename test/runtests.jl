@@ -1,5 +1,7 @@
 using Marconi, Test
 
+include("test_networkanalysis.jl")
+
 # Build the docs on Julia v1.0
 if get(ENV, "TRAVIS_JULIA_VERSION", nothing) == "1.0"
     cd(joinpath(@__DIR__, "..")) do

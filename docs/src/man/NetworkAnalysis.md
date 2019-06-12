@@ -8,6 +8,6 @@ There are functions to cascade networks and deembed networks as well.
 y2s
 z2s
 s2z
-h2s
-g2s
 ```
+
+# Examples

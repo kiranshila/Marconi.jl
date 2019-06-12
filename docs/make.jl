@@ -1,28 +1,25 @@
 using Marconi, PGFPlotsX, Documenter, DocumenterTools
+PGFPlotsX.latexengine!(PGFPlotsX.PDFLATEX)
 
 makedocs(
     modules = [Marconi],
-    format = Documenter.HTML(
-        # Use clean URLs, unless built as a "local" build
-        prettyurls = !("local" in ARGS),
-        canonical = "https://kiranshila.github.io/Marconi.jl/stable/"
-    ),
     clean = false,
+    doctest = true,
+    strict = true,
+    checkdocs = :none,
     sitename = "Marconi.jl",
     authors = "Kiran Shila",
     linkcheck = !("skiplinks" in ARGS),
-    pages = [
+    pages = Any[
         "Home" => "index.md",
         "Manual" => [
-            "Guide" => "man/Guide.md",
             "man/FileIO.md",
             "man/NetworkAnalysis.md",
             "man/RFAnalysis.md",
             "man/Calibration.md",
             "man/Plot.md",
-        ],
-    ],
-    strict = true,
+        ]
+    ]
 )
 
 @info "calling deploydocs"

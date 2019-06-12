@@ -5,3 +5,6 @@ as first principles including but not limited to:
 * Maximum Gain
 * Maximum Stable Gain
 * Q-Factor
+
+## Functions
+Coming soon

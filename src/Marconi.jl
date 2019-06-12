@@ -179,6 +179,13 @@ function isReciprocal(network::Network)
   return true
 end
 
+"""
+    plotSmith(network,(1,1))
+
+Plots the S(1,1) parameter from `network` on a Smith Chart.
+
+Returns a `PGFPlotsX.SmithChart` object.
+"""
 function plotSmith(network::Network,parameter::Tuple{Int,Int};
                   axopts::PGFPlotsX.Options = @pgf({}),
                   pltopts::PGFPlotsX.Options = @pgf({}))
@@ -194,6 +201,13 @@ function plotSmith(network::Network,parameter::Tuple{Int,Int};
   return p
 end
 
+"""
+    plotSmith!(sc, network,(1,1))
+
+Plots the S(1,1) parameter from `network` on an existing Smith Chart `sc`
+
+Returns the `sc` object
+"""
 function plotSmith!(smith::SmithChart,network::Network,parameter::Tuple{Int,Int};
                     pltopts::PGFPlotsX.Options = @pgf({}))
   # Collect the data we want
@@ -206,6 +220,14 @@ function plotSmith!(smith::SmithChart,network::Network,parameter::Tuple{Int,Int}
   return smith
 end
 
+"""
+    plotSmithCircle!(sc, xc, yc, rad)
+
+Plots a cricle with center coordinates `(xc,yc)` on the ``\\Gamma`` plane with radius rad
+on an existing Smith Chart object.
+
+Returns the `sc` object
+"""
 function plotSmithCircle!(smith::SmithChart,xc::A,yc::B,rad::C;
                           opts::PGFPlotsX.Options = @pgf({})) where {A <: Real, B <: Real, C <: Real}
   # Create an array to represent the circle

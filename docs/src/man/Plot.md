@@ -1,7 +1,8 @@
 # Plotting
-Marconi.jl uses Plots.jl as the plotting framework with (currently) InspectDR as
-the plotting backend.
+!!! note
 
+    The plotting library depends on a working installation of PGFPlotsX.jl
+    
 Currently, one can plot networks on
 * Smith Charts
 * Rectangular Plots
@@ -15,3 +16,10 @@ Currently, one can plot networks on
   * Constant-G Circles
   * Constant-X Circles
   * Constant-Y Circles
+
+## Functions
+```@docs
+plotSmith
+plotSmith!
+plotSmithCircle!
+```
