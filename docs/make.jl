@@ -1,9 +1,7 @@
-using Documenter, DocumenterTools
-
-makedocs(sitename="Marconi.jl")
+using Marconi, PGFPlotsX
 
 makedocs(
-    modules = [Documenter, DocumenterTools],
+    modules = [Marconi],
     format = Documenter.HTML(
         # Use clean URLs, unless built as a "local" build
         prettyurls = !("local" in ARGS),
@@ -15,7 +13,7 @@ makedocs(
     linkcheck = !("skiplinks" in ARGS),
     pages = [
         "Home" => "index.md",
-        "Manual" => Any[
+        "Manual" => [
             "Guide" => "man/Guide.md",
             "man/FileIO.md",
             "man/NetworkAnalysis.md",
@@ -26,6 +24,8 @@ makedocs(
     ],
     strict = true,
 )
+
+@info "calling deploydocs"
 
 deploydocs(
     repo = "github.com/kiranshila/Marconi.jl.git",
