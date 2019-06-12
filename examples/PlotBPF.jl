@@ -4,8 +4,15 @@ using Marconi
 
 bpf = readTouchstone("examples/BPF.s2p")
 
-axopts = @pgf {title="Hi", width = "5cm"}
-pltopts = @pgf {color = "red"}
+sc = SmithChart()
 
-p = plotSmith(bpf,(1,1), axopts = axopts, pltopts = pltopts)
-p = plotSmithCircle!(p,0.5,0.5,0.4)
+plotSmith!(sc,bpf,(1,1))
+plotSmith!(sc,bpf,(2,2))
+
+sc.contents[2]["color"] = "red"
+
+plotSmithCircle!(sc,0.5,0.5,0.4,opts = @pgf({"very thick"}))
+
+sc["title"] = "My Smith Chart"
+
+sc

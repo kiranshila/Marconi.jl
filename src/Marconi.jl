@@ -180,8 +180,8 @@ function isReciprocal(network::Network)
 end
 
 function plotSmith(network::Network,parameter::Tuple{Int,Int};
-                  axopts::PGFPlotsX.Options = nothing,
-                  pltopts::PGFPlotsX.Options = nothing)
+                  axopts::PGFPlotsX.Options = @pgf({}),
+                  pltopts::PGFPlotsX.Options = @pgf({}))
   # Collect the data we want
   data = [s[parameter[1],parameter[2]] for s in network.s_params]
   # Convert to normalized input impedance
@@ -189,45 +189,32 @@ function plotSmith(network::Network,parameter::Tuple{Int,Int};
   # Split into coordinates
   data = [(real(z),imag(z)) for z in data]
   # Create the PGFslotsX axis
-  if axopts == nothing
-    axopts = @pgf {}
-  end
-  if pltopts == nothing
-    pltopts = @pgf {}
-  end
   p = @pgf SmithChart({axopts...},Plot({pltopts...},Coordinates(data)))
   # Draw on smith chart
   return p
 end
 
-function plotSmith!(smith::SmithChart,network::Network,parameter::Tuple{Int,Int};pltopts::PGFPlotsX.Options = nothing)
+function plotSmith!(smith::SmithChart,network::Network,parameter::Tuple{Int,Int};
+                    pltopts::PGFPlotsX.Options = @pgf({}))
   # Collect the data we want
   data = [s[parameter[1],parameter[2]] for s in network.s_params]
   # Convert to normalized input impedance
   data = [(1+datum)/(1-datum) for datum in data]
   # Split into coordinates
   data = [(real(z),imag(z)) for z in data]
-  if pltopts == nothing
-    pltopts = @pgf {}
-  end
   push!(smith,@pgf Plot({pltopts...},Coordinates(data)))
   return smith
 end
 
-function plotSmithCircle!(smith::SmithChart,xc::A,yc::B,rad::C;opts::PGFPlotsX.Options = nothing) where {A <: Real, B <: Real, C <: Real}
+function plotSmithCircle!(smith::SmithChart,xc::A,yc::B,rad::C;
+                          opts::PGFPlotsX.Options = @pgf({})) where {A <: Real, B <: Real, C <: Real}
   # Create an array to represent the circle
   x = [rad*cosd(v) for v = -180:180]
   y = [rad*sind(v) for v = -180:180]
-
-  if opts == nothing
-    opts = @pgf {}
-  end
 
   circle = @pgf Plot({"is smithchart cs", opts...},Coordinates(x.+xc,y.+yc))
   push!(smith,circle)
   return smith
 end
-
-
 
 end # Module End
