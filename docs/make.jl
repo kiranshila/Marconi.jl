@@ -1,4 +1,4 @@
-using Marconi, PGFPlotsX
+using Marconi, PGFPlotsX, Documenter, DocumenterTools
 
 makedocs(
     modules = [Marconi],
