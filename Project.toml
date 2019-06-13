@@ -9,6 +9,7 @@ PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 
 [targets]
-test = ["Test"]
+test = ["Test","PGFPlotsX"]

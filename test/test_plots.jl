@@ -8,5 +8,5 @@
     # Check adding data to plot
     bpf = readTouchstone("../examples/BPF.s2p")
     sc2 = plotSmith(bpf,(1,1))
-    @test sizeof(sc2.contents) == 1
+    @test length(sc2.contents) == 1
 end
