@@ -16,14 +16,17 @@ before_install:
 notifications:
   email: false
 script:
-  - stage: build
-    script:
   - echo "**** running Docker"
   - docker run --env-file travis_docker_env.list -t -a STDOUT -a STDIN -a STDERR -v $PWD:/mnt tkpapp/texlive-julia-minimal /mnt/travis_docker_test_script.sh $TRAVIS_JULIA_VERSION
   - stage: "Documentation"
-  julia: 1.1
-    script:
-      - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
-                                             Pkg.instantiate()'
-      - julia --project=docs/ docs/make.jl
 after_success: skip
+
+jobs:
+  include:
+    - stage: "Documentation"
+      julia: 1.1
+      os: linux
+      script:
+        - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        - julia --project=docs/ docs/make.jl
+      after_success: skip
