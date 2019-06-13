@@ -1,11 +1,9 @@
 module Marconi
 
- # Network Params
-include("NetworkParameters.jl")
-include("MarconiPlots.jl")
-
 # Package exports
 export readTouchstone
+export isPassive
+export isReciprocal
 
 """
 The base Network type for representing n-port linear networks with characteristic impedance Z0.
@@ -16,8 +14,6 @@ mutable struct Network
   Z0::Union{Real,Complex}
   frequency::Array{Real,1}
   s_params::Array{Array{Union{Real,Complex},2},1}
-  passive::Bool
-  reciprocal::Bool
 end
 
 # File option enums
@@ -40,7 +36,7 @@ function readTouchstone(filename::String)
   thisZ0 = 50.
 
   # Setup blank network object to build from
-  thisNetwork = Network(0,0,[],[],false,false)
+  thisNetwork = Network(0,0,[],[])
 
   # Open the file
   open(filename) do f
@@ -106,10 +102,6 @@ function readTouchstone(filename::String)
     end
   end
 
-  # Checks for passivisity and recipocity
-  thisNetwork.passive = isPassive(thisNetwork)
-  thisNetwork.reciprocal = isReciprocal(thisNetwork)
-
   # Return the constructed network
   return thisNetwork
 end
@@ -157,7 +149,7 @@ function processTouchstoneLine(line::String,freqExp::Real,paramT::paramType,para
   return frequency,ports,params
 end
 
-"Internal function to check for pasivisity"
+
 function isPassive(network::Network)
   for parameter in network.s_params
     for s in parameter
@@ -170,10 +162,15 @@ function isPassive(network::Network)
   return true
 end
 
-"Internal function to check for recipocity"
+
 function isReciprocal(network::Network)
   #FIXME
   return true
 end
+
+# Sub files, these need to be at the end here such that the files have access
+# to the types defined in this file
+include("NetworkParameters.jl")
+include("MarconiPlots.jl")
 
 end # Module End

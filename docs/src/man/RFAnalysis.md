@@ -6,5 +6,8 @@ as first principles including but not limited to:
 * Maximum Stable Gain
 * Q-Factor
 
-## Functions
-Coming soon
+## Usage
+Marconi is structured around a base `Network` object. This object can be
+constructed with data, equations, and the combination of other networks.
+
+To build a network from a file, call 

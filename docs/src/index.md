@@ -19,6 +19,12 @@ Pages = [
 Depth = 1
 ```
 
+## Library Outline
+
+```@contents
+Pages = ["lib/Public.md"]
+```
+
 # Coming Soon
 Depending on the progress of some other libraries, Marconi.jl would like to include
 in the near future

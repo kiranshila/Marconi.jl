@@ -17,10 +17,9 @@ makedocs(
             "man/NetworkAnalysis.md",
             "man/RFAnalysis.md",
             "man/Calibration.md",
-            "man/Plot.md",
-        ]
-    ]
-)
+            "man/Plot.md"],
+        "Library" => Any[
+            "Public" =>"lib/Public.md"]])
 
 @info "calling deploydocs"
 
