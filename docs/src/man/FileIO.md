@@ -5,8 +5,3 @@ S, Y, Z, H, and G parameter reading.
 
 
 Marconi.jl currently does not support noise parameters nor per-port impedance.
-
-## Functions
-```@docs
-readTouchstone
-```
