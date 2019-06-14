@@ -1,4 +1,7 @@
 ![Logo](docs/src/assets/logo_full.svg)
+<p align="center">
+<img width="400px" src="https://raw.githubusercontent.com/kiranshila/Marconi.jl/master/docs/src/assets/logo_full.svg"/>
+</p>
 
 *Walks like Python, Runs like C" for open source RF/Microwave engineering*
 
@@ -13,6 +16,6 @@
 [codecov-img]: https://codecov.io/gh/kiranshila/Marconi.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/kiranshila/Marconi.jl
 
-```julia-repl
+```julia
 julia> Pkg.add("github.com/kiranshila/Marconi.jl")
 ```
