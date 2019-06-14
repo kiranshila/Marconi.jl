@@ -1,5 +1,7 @@
 module Marconi
 
+import Base.show
+
 # Package exports
 export readTouchstone
 export isPassive
@@ -14,6 +16,37 @@ mutable struct Network
   Z0::Union{Real,Complex}
   frequency::Array{Real,1}
   s_params::Array{Array{Union{Real,Complex},2},1}
+end
+
+function Base.show(io::IO,network::Network)
+  println("$(network.ports)-Port Network")
+  println(" Z0 = $(network.Z0)")
+  println(" Frequency = $(prettyPrintFrequency(network.frequency[1])) to $(prettyPrintFrequency(network.frequency[end]))")
+  println(" Points = $(length(network.frequency))")
+end
+
+Base.show(io::IO, ::MIME"text/plain", network::Network) = Base.show(io,network)
+
+function prettyPrintFrequency(freq::T) where {T <: Real}
+  multiplierString = ""
+  multiplier = 1
+  if freq < 1e3
+    multiplierString = ""
+    multiplier = 1
+  elseif 1e3 <= freq < 1e6
+    multiplierString = "K"
+    multiplier = 1e3
+  elseif 1e6 <= freq < 1e9
+    multiplierString = "M"
+    multiplier = 1e6
+  elseif 1e9 <= freq < 1e12
+    multiplierString = "G"
+    multiplier = 1e9
+  elseif 1e12 <= freq < 1e15
+    multiplierString = "T"
+    multiplier = 1e12
+  end
+  return "$(freq/multiplier) $(multiplierString)Hz"
 end
 
 # File option enums

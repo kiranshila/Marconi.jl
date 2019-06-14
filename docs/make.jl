@@ -3,7 +3,7 @@ PGFPlotsX.latexengine!(PGFPlotsX.PDFLATEX)
 
 makedocs(
     modules = [Marconi],
-    clean = false,
+    clean = true,
     doctest = true,
     strict = true,
     checkdocs = :none,

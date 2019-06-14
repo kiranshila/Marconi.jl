@@ -1,7 +1,6 @@
-# Marconi.jl
-A Julia Library for DC to Daylight
+![Logo](assets/logo_full.svg)
 
-"Walks like Python, Runs like C" for open source RF/Microwave engineering.
+*Walks like Python, Runs like C" for open source RF/Microwave engineering*
 
 ## Main Features
 Marconi.jl aims to give similar functionality as the wonderful scikit-rf
