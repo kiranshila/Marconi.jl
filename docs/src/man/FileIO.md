@@ -1,7 +1,30 @@
 # File IO
-Marconi.jl supports reading and writing standard Touchstone files with most of
-Touchstone spec implemented including n-ports, non standard port impedances, and
-S, Y, Z, H, and G parameter reading.
 
+```@contents
+Pages = ["FileIO.md"]
+Depth = 3
+```
 
-Marconi.jl currently does not support noise parameters nor per-port impedance.
+## Reading Touchstone Files
+
+One of the easiest ways to get measured data into `Marconi` is with Touchstone files.
+
+These files follow the standard enumerated [here](http://na.support.keysight.com/plts/help/WebHelp/FilePrint/SnP_File_Format.htm) - a typical output format from simulation
+software and network analyzers.
+
+!!! note
+
+    `Marconi` currently doesn't support port impedance mapping (different port impedances) or noise parameters.
+
+Reading these files into a `Network` object is straightforward
+
+```@eval
+cd("../../..")
+cp("examples/BPF.s2p","docs/build/man/BPF.s2p",force = true)
+```
+
+```@example
+using Marconi # hide
+bpf = readTouchstone("BPF.s2p")
+print(bpf) # hide
+```

@@ -1,9 +1,9 @@
 ![Logo](assets/logo_full.svg)
 
-*Walks like Python, Runs like C" for open source RF/Microwave engineering*
+*"Walks like Python, Runs like C" for open source RF/Microwave engineering*
 
 ## Main Features
-Marconi.jl aims to give similar functionality as the wonderful scikit-rf
+Marconi.jl aims to give similar functionality as the wonderful [scikit-rf](https://scikit-rf-web.readthedocs.io/)
 library in pure Julia. Most of this package will focus on linear network parameters
 with more advanced non-linear network analysis coming in the future.
 
