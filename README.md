@@ -13,7 +13,7 @@
 [codecov-img]: https://codecov.io/gh/kiranshila/Marconi.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/kiranshila/Marconi.jl
 
-*Walks like Python, Runs like C" for open source RF/Microwave engineering*
+*"Walks like Python, Runs like C" for open source RF/Microwave engineering*
 
 ```julia
 julia> Pkg.add("github.com/kiranshila/Marconi.jl")
