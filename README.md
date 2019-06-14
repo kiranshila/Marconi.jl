@@ -2,8 +2,6 @@
 <img width="400px" src="https://raw.githubusercontent.com/kiranshila/Marconi.jl/master/docs/src/assets/logo_full.png"/>
 </p>
 
-*Walks like Python, Runs like C" for open source RF/Microwave engineering*
-
 [![][docs-dev-img]][docs-dev-url] [![][travis-img]][travis-url] [![][codecov-img]][codecov-url]
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
@@ -14,6 +12,8 @@
 
 [codecov-img]: https://codecov.io/gh/kiranshila/Marconi.jl/branch/master/graph/badge.svg
 [codecov-url]: https://codecov.io/gh/kiranshila/Marconi.jl
+
+*Walks like Python, Runs like C" for open source RF/Microwave engineering*
 
 ```julia
 julia> Pkg.add("github.com/kiranshila/Marconi.jl")
