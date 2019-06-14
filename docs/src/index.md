@@ -1,6 +1,4 @@
-<p align="center">
-<img width="400px" src="https://raw.githubusercontent.com/kiranshila/Marconi.jl/master/docs/src/assets/logo_full.png"/>
-</p>
+![Logo](assets/logo_full.svg)
 
 *Walks like Python, Runs like C" for open source RF/Microwave engineering*
 
