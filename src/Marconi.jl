@@ -6,26 +6,43 @@ import Base.show
 export readTouchstone
 export isPassive
 export isReciprocal
+export AbstractNetwork
+export DataNetwork
+export EquationNetwork
+
+abstract type AbstractNetwork end
 
 """
 The base Network type for representing n-port linear networks with characteristic impedance Z0.
   By default, the network is stored as S-Parameters with the corresponding frequency list.
 """
-mutable struct Network
+mutable struct DataNetwork <: AbstractNetwork
   ports::Int
   Z0::Union{Real,Complex}
   frequency::Array{Real,1}
   s_params::Array{Array{Union{Real,Complex},2},1}
 end
 
-function Base.show(io::IO,network::Network)
-  println("$(network.ports)-Port Network")
-  println(" Z0 = $(network.Z0)")
-  println(" Frequency = $(prettyPrintFrequency(network.frequency[1])) to $(prettyPrintFrequency(network.frequency[end]))")
-  println(" Points = $(length(network.frequency))")
+mutable struct EquationNetwork <: AbstractNetwork
+  ports::Int
+  Z0::Union{Real,Complex}
+  eq::Function
 end
 
-Base.show(io::IO, ::MIME"text/plain", network::Network) = Base.show(io,network)
+function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
+  if T == DataNetwork
+    println("$(network.ports)-Port Network")
+    println(" Z0 = $(network.Z0)")
+    println(" Frequency = $(prettyPrintFrequency(network.frequency[1])) to $(prettyPrintFrequency(network.frequency[end]))")
+    println(" Points = $(length(network.frequency))")
+  elseif T == EquationNetwork
+    println("$(network.ports)-Port Network")
+    println(" Z0 = $(network.Z0)")
+    println(" Equation-driven Network")
+  end
+end
+
+Base.show(io::IO, ::MIME"text/plain", network::T) where {T <: AbstractNetwork} = Base.show(io,network)
 
 function prettyPrintFrequency(freq::T) where {T <: Real}
   multiplierString = ""
@@ -69,7 +86,7 @@ function readTouchstone(filename::String)
   thisZ0 = 50.
 
   # Setup blank network object to build from
-  thisNetwork = Network(0,0,[],[])
+  thisNetwork = DataNetwork(0,0,[],[])
 
   # Open the file
   open(filename) do f
@@ -183,7 +200,7 @@ function processTouchstoneLine(line::String,freqExp::Real,paramT::paramType,para
 end
 
 
-function isPassive(network::Network)
+function isPassive(network::T) where {T <: AbstractNetwork}
   for parameter in network.s_params
     for s in parameter
       if abs(s) > 1
@@ -196,7 +213,7 @@ function isPassive(network::Network)
 end
 
 
-function isReciprocal(network::Network)
+function isReciprocal(network::T) where {T <: AbstractNetwork}
   #FIXME
   return true
 end
