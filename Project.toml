@@ -8,8 +8,9 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 
 [extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
 
 [targets]
-test = ["Test","PGFPlotsX"]
+test = ["Test", "PGFPlotsX","Coverage"]
