@@ -15,3 +15,19 @@ axstyle = @pgf {width="20cm", title="Big Boi"}
 
 style = @pgf {color = "red", "thick"}
 plotSmithData(bpf,(1,1),opts=style)
+
+@pgf TikzPicture(
+        Axis(
+            PlotInc({ only_marks },
+                Table(; x = 1:2, y = 3:4)),
+            PlotInc(
+                Table(; x = 5:6, y = 1:2))))
+
+SmithChart()
+
+using Pkg
+using PGFPlotsX
+
+Pkg.add("PGFPlotsX")
+
+Pkg.build("PGFPlotsX")
