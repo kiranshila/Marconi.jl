@@ -30,6 +30,7 @@ cp("examples/BPF.s2p","docs/build/man/BPF.s2p", force = true) # hide
 
 ```@example plot1
 using Marconi
+using PGFPlotsX
 sc = SmithChart()
 ```
 
