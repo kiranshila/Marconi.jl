@@ -28,7 +28,7 @@ if get(ENV, "TRAVIS_JULIA_VERSION", nothing) == "1.1"
         withenv("JULIA_LOAD_PATH" => nothing) do
             cmd = `$(Base.julia_cmd()) --depwarn=no --color=yes --project=docs/`
             coverage = Base.JLOptions().code_coverage == 0 ? "none" : "user"
-            run(`$(cmd) -e 'using Pkg; Pkg.instantiate()'`)
+            run(`$(cmd) -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'`)
             run(`$(cmd) --code-coverage=$(coverage) docs/make.jl`)
         end
     end
