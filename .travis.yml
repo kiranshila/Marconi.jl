@@ -38,6 +38,14 @@ jobs:
     - stage: "Documentation"
       julia: 1.1
       os: linux
+      dist: trusty
+      sudo: required
+      services: docker
+      notifications:
+        email: false
+      before_install:
+        - echo "**** pulling Docker image"
+        - docker pull tkpapp/texlive-julia-minimal
       script:
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl

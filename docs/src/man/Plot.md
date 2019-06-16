@@ -28,23 +28,10 @@ cd("../../..") # hide
 cp("examples/BPF.s2p","docs/build/man/BPF.s2p", force = true) # hide
 ```
 
-```@setup plot1
-using PGFPlotsX
-savefigs = (figname, obj) -> begin
-    pgfsave(figname * ".pdf", obj)
-    run(`pdf2svg $(figname * ".pdf") $(figname * ".svg")`)
-    pgfsave(figname * ".tex", obj);
-    return nothing
-end
-```
-
 ```@example plot1
 using Marconi
 sc = SmithChart()
-savefigs("plot1", ans) # hide
 ```
-[\[.pdf\]](plot1.pdf), [\[generated .tex\]](plot1.tex)
-![](plot1.svg)
 
 This object is an `Axis` which can accept `Plots` objects as well as `PGFPlotsX.Options`.
 
@@ -66,21 +53,14 @@ so we pass in the `(1,1)` tuple.
 
 ```@example plot1
 plotSmithData!(sc,bpf,(1,1))
-savefigs("plot2",ans) # hide
 ```
-[\[.pdf\]](plot2.pdf), [\[generated .tex\]](plot2.tex)
-![](plot2.svg)
-
 
 This is the same behavior as if we constructed the axis and plotted simultaneously
 with `plotSmithData`.
 
 ```@example plot1
 plotSmithData(bpf,(1,1))
-savefigs("plot3",ans) # hide
 ```
-[\[.pdf\]](plot3.pdf), [\[generated .tex\]](plot3.tex)
-![](plot3.svg)
 
 ### Smith Chart Circles
 As anyone who has read [Microwave Transistor Amplifiers](https://books.google.com/books/about/Microwave_Transistor_Amplifiers.html?id=bwpTAAAAMAAJ&source=kp_book_description) would know, drawing circles on a Smith Chart could be very useful. In `Marconi`, use cases such as stability circles and
@@ -97,10 +77,7 @@ This *plot* can also accept the `opts` kwarg.
 sc = SmithChart()
 style = @pgf {"color" = "cyan", "very thick"}
 plotSmithCircle!(sc,0.3,0.75,0.3,opts = style)
-savefigs("plot4",ans) # hide
 ```
-[\[.pdf\]](plot4.pdf), [\[generated .tex\]](plot4.tex)
-![](plot4.svg)
 
 ### Plot Options
 As these plots and axes are fundamentally `PGFPlotsX` objects, we can pass in options using the `opts` kwarg. Additionally, the `plotSmithData` function can take
@@ -116,10 +93,7 @@ the fact as well just like every other `PGFPlotsX` object.
 
 ```@example plot1
 sc["title"] = "My Smith Chart"
-savefigs("plot5",sc) # hide
 ```
-[\[.pdf\]](plot5.pdf), [\[generated .tex\]](plot5.tex)
-![](plot5.svg)
 
 Finally, the width and tick mark density is all related as per the PGFPlots manual.
 
@@ -127,24 +101,11 @@ Check it out [here](http://mirrors.ctan.org/graphics/pgf/contrib/pgfplots/doc/pg
 
 When creating a `SmithChart` axis by itself, there is no kwarg for options.
 
-```@setup plot2
-using PGFPlotsX
-savefigs = (figname, obj) -> begin
-    pgfsave(figname * ".pdf", obj)
-    run(`pdf2svg $(figname * ".pdf") $(figname * ".svg")`)
-    pgfsave(figname * ".tex", obj);
-    return nothing
-end
-```
-
 ```@example plot2
 using PGFPlotsX # hide
 axis_style = @pgf {width = "15cm",title = "Medium Smith Chart"}
 sc = SmithChart(axis_style)
-savefigs("plot6",ans) # hide
 ```
-[\[.pdf\]](plot6.pdf), [\[generated .tex\]](plot6.tex)
-![](plot6.svg)
 
 ## Rectangular Plots
 
