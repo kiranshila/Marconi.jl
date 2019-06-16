@@ -5,7 +5,7 @@ makedocs(
     modules = [Marconi],
     clean = true,
     doctest = true,
-    strict = true,
+    strict = false,
     checkdocs = :none,
     sitename = "Marconi.jl",
     authors = "Kiran Shila",
