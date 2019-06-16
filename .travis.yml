@@ -21,7 +21,6 @@ notifications:
   email: false
 script:
   - echo "**** running Docker"
-  - sudo apt-get update; sudo apt-get install curl
   - docker run --env-file travis_docker_env.list -t -a STDOUT -a STDIN -a STDERR -v $PWD:/mnt tkpapp/texlive-julia-minimal /mnt/travis_docker_test_script.sh $TRAVIS_JULIA_VERSION
 after_success:
   - echo "**** submitting coverage information"
