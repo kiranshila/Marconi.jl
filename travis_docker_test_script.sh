@@ -10,6 +10,6 @@ JULIABIN=/test/julia-$JULIAVER/bin/julia
 cd /mnt && if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 
 # run tests
-sudo chmod 777 Manifest.toml
+chmod 777 Manifest.toml
 ls -las
 $JULIABIN -e "import Pkg; Pkg.build(); Pkg.test(; coverage=true)"
