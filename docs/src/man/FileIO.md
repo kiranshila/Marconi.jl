@@ -25,6 +25,5 @@ cp("examples/BPF.s2p","docs/build/man/BPF.s2p",force = true)
 
 ```@example
 using Marconi # hide
-bpf = readTouchstone("BPF.s2p")
-print(bpf) # hide
+readTouchstone("BPF.s2p")
 ```

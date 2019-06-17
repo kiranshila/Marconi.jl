@@ -63,6 +63,21 @@ with `plotSmithData`.
 plotSmithData(bpf,(1,1))
 ```
 
+#### Plotting with Equation-Driven Networks
+To plot with an `EquationNetwork`, we must also provide the frequencies to plot. This is done with the additional kwarg `freqs`
+
+```@example plot1
+function inductorAndResistor(;freq,Z0)
+    L = 1e-9
+    R = 30
+    z = R + im*2*pi*freq*L
+    return (z-Z0)/(z+Z0)
+end
+RL = EquationNetwork(1,50,inductorAndResistor)
+
+plotSmithData(RL,(1,1),freqs=range(100e6,stop=10e9,length=201))
+```
+
 ### Smith Chart Circles
 As anyone who has read [Microwave Transistor Amplifiers](https://books.google.com/books/about/Microwave_Transistor_Amplifiers.html?id=bwpTAAAAMAAJ&source=kp_book_description) would know, drawing circles on a Smith Chart could be very useful. In `Marconi`, use cases such as stability circles and
 gain circles are explored in [RF Analysis](@ref).

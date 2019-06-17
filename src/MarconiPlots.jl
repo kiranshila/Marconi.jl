@@ -34,7 +34,11 @@ function plotSmithData(network::T,parameter::Tuple{Int,Int};
     # Draw on smith chart
     return p
   elseif T == EquationNetwork
-    data = [network.eq(freq=x) for x in freqs] ./ network.Z0
+    # Grab s-parameter data for each frequency
+    data = [network.eq(freq=x,Z0=network.Z0) for x in freqs]
+    # Convert to normalized input impedance
+    data = [(1+datum)/(1-datum) for datum in data]
+    # Add smith chart data
     data = [(real(z),imag(z)) for z in data]
     # Create the PGFslotsX axis
     p = @pgf SmithChart({axopts...},Plot({opts...},Coordinates(data)))

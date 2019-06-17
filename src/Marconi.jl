@@ -23,26 +23,45 @@ mutable struct DataNetwork <: AbstractNetwork
   s_params::Array{Array{Union{Real,Complex},2},1}
 end
 
+function DataNetwork(ports::Int,Z0::Number,frequency::Array{A,1},s_params::Array{B,1}) where {A <: Number, B <: Number}
+  # Hacky fix as 1x1 array still needs to be Array{T,2}
+  s_params = [hcat(param) for param in s_params]
+  DataNetwork(ports,Z0,frequency,s_params)
+end
+
+"""
+The base Network type for representing n-port linear networks with characteristic impedance Z0.
+  The S-Parameters for an EquationNetwork are defined by a function that returns a `ports`-square matrix
+  and accepts kwargs `Z0` and `freq`.
+"""
 mutable struct EquationNetwork <: AbstractNetwork
   ports::Int
   Z0::Union{Real,Complex}
   eq::Function
+  function EquationNetwork(ports,Z0,eq)
+    # Test that the equation is valid by checking size and args
+    result = eq(freq = 1,Z0 = Z0)
+    if ports == 1
+      @assert size(result) == () "1-Port network must be built with a function that returns a single number."
+    else
+      @assert size(result) == (ports,ports) "n-Port network must be built with a function that returns an n-square matrix."
+    end
+    new(ports,Z0,eq)
+  end
 end
 
 function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
   if T == DataNetwork
-    println("$(network.ports)-Port Network")
-    println(" Z0 = $(network.Z0)")
-    println(" Frequency = $(prettyPrintFrequency(network.frequency[1])) to $(prettyPrintFrequency(network.frequency[end]))")
-    println(" Points = $(length(network.frequency))")
+    println(io,"$(network.ports)-Port Network")
+    println(io," Z0 = $(network.Z0)")
+    println(io," Frequency = $(prettyPrintFrequency(network.frequency[1])) to $(prettyPrintFrequency(network.frequency[end]))")
+    println(io," Points = $(length(network.frequency))")
   elseif T == EquationNetwork
-    println("$(network.ports)-Port Network")
-    println(" Z0 = $(network.Z0)")
-    println(" Equation-driven Network")
+    println(io,"$(network.ports)-Port Network")
+    println(io," Z0 = $(network.Z0)")
+    println(io," Equation-driven Network")
   end
 end
-
-Base.show(io::IO, ::MIME"text/plain", network::T) where {T <: AbstractNetwork} = Base.show(io,network)
 
 function prettyPrintFrequency(freq::T) where {T <: Real}
   multiplierString = ""

@@ -13,11 +13,11 @@ makedocs(
     pages = Any[
         "Home" => "index.md",
         "Manual" => [
-            "man/FileIO.md",
-            "man/NetworkAnalysis.md",
             "man/RFAnalysis.md",
-            "man/Calibration.md",
-            "man/Plot.md"],
+            "man/FileIO.md",
+            "man/Plot.md",
+            "man/NetworkAnalysis.md",
+            "man/Calibration.md"],
         "Library" => Any[
             "Public" =>"lib/Public.md"]])
 

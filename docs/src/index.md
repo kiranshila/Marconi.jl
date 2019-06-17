@@ -3,17 +3,18 @@
 *"Walks like Python, Runs like C" for open source RF/Microwave engineering*
 
 ## Main Features
-Marconi.jl aims to give similar functionality as the wonderful [scikit-rf](https://scikit-rf-web.readthedocs.io/)
-library in pure Julia. Most of this package will focus on linear network parameters
-with more advanced non-linear network analysis coming in the future.
+Marconi.jl is a library for analysis and plotting of linear RF/Microwave networks.
+It aims to give similar functionality as the wonderful [scikit-rf](https://scikit-rf-web.readthedocs.io/)
+library in pure Julia. While focusing on linear network analysis now, we hope to implement some non-linear analysis
+as well as instrument control in the future.
 
 ```@contents
 Pages = [
+    "man/RFAnalysis.md",
+    "man/Plot.md",
     "man/FileIO.md",
     "man/NetworkAnalysis.md",
-    "man/RFAnalysis.md",
-    "man/Calibration.md",
-    "man/Plot.md"
+    "man/Calibration.md"
 ]
 Depth = 1
 ```
