@@ -120,41 +120,41 @@ function readTouchstone(filename::String)
         if length(options) == 0
           continue # Use defaults
         else
-          options = split(strip(options)," ")
+          options = split(strip(options))
           # Some VNAs put random amounts of spaces between the options,
           # so we have to remove all the empty entries
           options = [option for option in options if option != ""]
 
           # Process frequency exponent
-          if options[1] == "HZ"
+          if lowercase(options[1]) == "hz"
             thisfreqExponent = 1.
-          elseif options[1] == "KHZ"
+          elseif lowercase(options[1]) == "khz"
             thisfreqExponent = 1e3
-          elseif options[1] == "MHZ"
+          elseif lowercase(options[1]) == "mhz"
             thisfreqExponent = 1e6
-          elseif options[1] == "GHZ"
+          elseif lowercase(options[1]) == "ghz"
             thisfreqExponent = 1e9
           end
 
           # Process Parameter Type
-          if options[2] == "S"
+          if lowercase(options[2]) == "s"
             thisParamType = S
-          elseif options[2] == "Y"
+          elseif lowercase(options[2]) == "y"
             thisParamType = Y
-          elseif options[2] == "Z"
+          elseif lowercase(options[2]) == "z"
             thisParamType = Z
-          elseif options[2] == "G"
+          elseif lowercase(options[2]) == "g"
             thisParamType = G
-          elseif options[2] == "H"
+          elseif lowercase(options[2]) == "h"
             thisParamType = H
           end
 
           # Process Parameter Format
-          if options[3] == "MA"
+          if lowercase(options[3]) == "ma"
             thisParamFormat = MA
-          elseif options[3] == "DB"
+          elseif lowercase(options[3]) == "db"
             thisParamFormat = DB
-          elseif options[3] == "RI"
+          elseif lowercase(options[3]) == "ri"
             thisParamFormat = RI
           end
 
@@ -177,7 +177,7 @@ end
 
 "Internal function to process touchstone lines"
 function processTouchstoneLine(line::String,freqExp::Real,paramT::paramType,paramF::paramFormat,Z0::T) where {T <: Number}
-  lineParts = [data for data in split(line," ") if data != ""]
+  lineParts = [data for data in split(line) if data != ""]
   frequency = parse(Float64,lineParts[1]) * freqExp
   ports = √((length(lineParts)-1)/2) # Parameters are in two parts for each port
   if mod(ports,1) != 0

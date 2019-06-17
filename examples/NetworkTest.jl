@@ -1,42 +1,14 @@
 using Marconi
 using PGFPlotsX
 
-function inductorAndResistor(;freq,Z0)
-    z = 30 + im*2*pi*freq*1e-9
-    return [(z-Z0)/(z+Z0)]
-end
+bpf = readTouchstone("examples/Amp.s2p")
 
-RL = EquationNetwork(1,50,inductorAndResistor)
+style1 = @pgf {color = "red", "thick"}
+style2 = @pgf {color = "blue", "thick"}
+style3 = @pgf {color = "green", "thick"}
+style4 = @pgf {color = "yellow", "thick"}
 
-axstyle = @pgf {width="20cm", title="Big Boi"}
-
-style = @pgf {color = "red", "thick"}
-
-plotSmithData(RL,(1,1),freqs=range(100e6,stop=10e9,length=201),opts=style,axopts=axstyle)
-
-bpf = readTouchstone("examples/BPF.s2p")
-
-
-
-@pgf TikzPicture(
-        Axis(
-            PlotInc({ only_marks },
-                Table(; x = 1:2, y = 3:4)),
-            PlotInc(
-                Table(; x = 5:6, y = 1:2))))
-
-SmithChart()
-
-using Pkg
-using PGFPlotsX
-
-Pkg.add("PGFPlotsX")
-
-Pkg.build("PGFPlotsX")
-
-function transmissionLine(;freq,Z0)
-    l = 1e-2 # 2cm
-    λ = (3e8/freq)
-    β = (2*pi)/λ
-    return [0 exp(-β*l);exp(-β*l) 0]
-end
+ax = plotRectangular(bpf,(1,1),dB,opts = style1)
+plotRectangular!(ax,bpf,(1,1),dB,opts = style2)
+plotRectangular!(ax,bpf,(1,1),dB,opts = style3)
+plotRectangular!(ax,bpf,(1,2),dB,opts = style4)
