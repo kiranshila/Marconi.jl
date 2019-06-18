@@ -125,6 +125,29 @@ sc = SmithChart(axis_style)
 
 ## Rectangular Plots
 
+To plot on a rectangular axis, we call the `plotRectangular` and `plotRectangular!` functions.
+
+These operate similar in functionality to the smith chart plotting utilities as `plotRectangular` accepts a network object and the parameter to plot. Additionally,
+`plotRectangular` requires a function to apply to make 1-D data. This could be `dB` as supplied
+by this library, `real`, `imag`, or some other function. Finally, one could plot any network
+parameter, be it S, Z, Y, H, G, or ABCD.
+
+Same as `plotSmithData`, `plotRectangular!` accepts an `opts` kwarg as well as an `axopts` kwag for `plotRectangular` as it is creating an axis object.
+
+```@setup example_rec
+using Marconi
+using PGFPlotsX
+```
+
+```@example example_rec
+bpf = readTouchstone("examples/Amp.s2p")
+style1 = @pgf {color = "red", "thick"}
+style2 = @pgf {color = "blue", "thick"}
+ax = plotSmithData(bpf,(1,1),opts=style1)
+plotRectangular!(ax,bpf,(2,1),dB,opts = style2)
+```
+
+
 ## Polar Plots
 
 ## Groups of Plots
