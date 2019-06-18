@@ -26,6 +26,7 @@ empty `SmithChart` axis object from `PGFPlotsX`.
 ```@eval
 cd("../../..") # hide
 cp("examples/BPF.s2p","docs/build/man/BPF.s2p", force = true) # hide
+cp("examples/Amp.s2p","docs/build/man/Amp.s2p", force = true) # hide
 ```
 
 ```@example plot1
@@ -140,11 +141,11 @@ using PGFPlotsX
 ```
 
 ```@example example_rec
-bpf = readTouchstone("examples/Amp.s2p")
+amp = readTouchstone("Amp.s2p")
 style1 = @pgf {color = "red", "thick"}
 style2 = @pgf {color = "blue", "thick"}
-ax = plotSmithData(bpf,(1,1),opts=style1)
-plotRectangular!(ax,bpf,(2,1),dB,opts = style2)
+ax = plotRectangular(amp,(1,1),dB,opts = style1)
+plotRectangular!(ax,amp,(2,1),dB,opts = style2)
 ```
 
 

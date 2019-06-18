@@ -59,7 +59,7 @@ function idealTransmissionLine(;freq,Z0)
     l = 1e-2 # 2cm
     λ = (3e8/freq)
     β = (2*pi)/λ
-    return(0 exp(-β*l);exp(-β*l) 0)
+    return [0 exp(-β*l);exp(-β*l) 0]
 end
 
 tline = EquationNetwork(2,50,idealTransmissionLine)
