@@ -20,7 +20,10 @@ end</code></pre><pre><code class="language-none">inductorAndResistor (generic fu
     l = 1e-2 # 2cm
     λ = (3e8/freq)
     β = (2*pi)/λ
-    return(0 exp(-β*l);exp(-β*l) 0)
+    return [0 exp(-β*l);exp(-β*l) 0]
 end
 
-tline = EquationNetwork(2,50,idealTransmissionLine)</code></pre><footer><hr/><a class="previous" href="../../"><span class="direction">Previous</span><span class="title">Home</span></a><a class="next" href="../FileIO/"><span class="direction">Next</span><span class="title">File IO</span></a></footer></article></body></html>
+tline = EquationNetwork(2,50,idealTransmissionLine)</code></pre><pre><code class="language-none">2-Port Network
+ Z0 = 50
+ Equation-driven Network
+</code></pre><footer><hr/><a class="previous" href="../../"><span class="direction">Previous</span><span class="title">Home</span></a><a class="next" href="../FileIO/"><span class="direction">Next</span><span class="title">File IO</span></a></footer></article></body></html>
