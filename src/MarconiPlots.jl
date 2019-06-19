@@ -165,9 +165,108 @@ function plotRectangular(network::T,parameter::Tuple{Int,Int},pltFunc::Function 
     xlabel = "Frequency ($(multiplierString)Hz)"
 
     # Create the PGFslotsX axis
-    p = @pgf Axis({ylabel = ylabel,xlabel=xlabel, axopts...},Plot({opts...},Coordinates(data)))
+    p = @pgf Axis({ylabel = ylabel,xlabel=xlabel, axopts...},PlotInc({opts...},Coordinates(data)))
     # Draw on rectangular axis
     return p
+  elseif T == EquationNetwork
+    # FIXME
+  end
+end
+
+# FIXME add labels to all rectangular plotting
+function plotRectangular(network::T,pltFunc::Function;axopts::PGFPlotsX.Options = @pgf({}),opts::PGFPlotsX.Options = @pgf({}),freqs::Union{StepRangeLen,Array, Nothing} = nothing, label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
+  if T == DataNetwork
+    # Apply plotting function
+    data = pltFunc(network)
+
+    # Find frequency multiplier from the last element
+    multiplierString = ""
+    multiplier = 1
+    freq = network.frequency[end]
+    if freq < 1e3
+      multiplierString = ""
+      multiplier = 1
+    elseif 1e3 <= freq < 1e6
+      multiplierString = "K"
+      multiplier = 1e3
+    elseif 1e6 <= freq < 1e9
+      multiplierString = "M"
+      multiplier = 1e6
+    elseif 1e9 <= freq < 1e12
+      multiplierString = "G"
+      multiplier = 1e9
+    elseif 1e12 <= freq < 1e15
+      multiplierString = "T"
+      multiplier = 1e12
+    end
+
+    frequency = network.frequency ./ multiplier
+
+    # Format with freq
+    data = [(frequency[i],data[i]) for i = 1:length(data)]
+
+    xlabel = "Frequency ($(multiplierString)Hz)"
+
+    # Create the PGFslotsX axis
+    if label != nothing
+      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none", opts...},Coordinates(data)),LegendEntry(label))
+    else
+      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none", opts...},Coordinates(data)))
+    end
+    # Draw on rectangular axis
+    return p
+  elseif T == EquationNetwork
+    # FIXME
+  end
+end
+
+function plotRectangular!(ax::Axis, network::T,pltFunc::Function;axopts::PGFPlotsX.Options = @pgf({}),opts::PGFPlotsX.Options = @pgf({}),freqs::Union{StepRangeLen,Array, Nothing} = nothing, label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
+  if T == DataNetwork
+    # Apply plotting function
+    data = pltFunc(network)
+
+    # Create y label
+    ylabel = "$(pltFunc)"
+
+    # Find frequency multiplier from the last element
+    multiplierString = ""
+    multiplier = 1
+    freq = network.frequency[end]
+    if freq < 1e3
+      multiplierString = ""
+      multiplier = 1
+    elseif 1e3 <= freq < 1e6
+      multiplierString = "K"
+      multiplier = 1e3
+    elseif 1e6 <= freq < 1e9
+      multiplierString = "M"
+      multiplier = 1e6
+    elseif 1e9 <= freq < 1e12
+      multiplierString = "G"
+      multiplier = 1e9
+    elseif 1e12 <= freq < 1e15
+      multiplierString = "T"
+      multiplier = 1e12
+    end
+
+    frequency = network.frequency ./ multiplier
+
+    # Format with freq
+    data = [(frequency[i],data[i]) for i = 1:length(data)]
+
+    xlabel = "Frequency ($(multiplierString)Hz)"
+
+    # Create the PGFslotsX plot
+    if label != nothing
+      plt = @pgf PlotInc({mark = "none", opts...},Coordinates(data))
+      push!(ax,plt)
+      push!(ax,@pgf(LegendEntry(label)))
+    else
+      plt = @pgf PlotInc({mark = "none", opts...},Coordinates(data))
+      push!(ax,plt)
+    end
+    # Draw on rectangular axis
+    return ax
   elseif T == EquationNetwork
     # FIXME
   end
@@ -237,7 +336,7 @@ function plotRectangular!(ax::Axis, network::T,parameter::Tuple{Int,Int},pltFunc
     xlabel = "Frequency ($(multiplierString)Hz)"
 
     # Create the PGFslotsX plot
-    plt = @pgf Plot({opts...},Coordinates(data))
+    plt = @pgf PlotInc({opts...},Coordinates(data))
 
     # Push to axis
     push!(ax,plt)

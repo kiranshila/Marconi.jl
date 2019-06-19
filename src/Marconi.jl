@@ -1,6 +1,7 @@
 module Marconi
 
 import Base.show
+using LinearAlgebra
 
 # Package exports
 export readTouchstone
@@ -9,6 +10,9 @@ export isReciprocal
 export AbstractNetwork
 export DataNetwork
 export EquationNetwork
+export testDelta
+export testMagDelta
+export testK
 
 abstract type AbstractNetwork end
 
@@ -237,6 +241,37 @@ function isReciprocal(network::T) where {T <: AbstractNetwork}
   return true
 end
 
+```
+  testDelta(network)
+
+Returns a vector of `Δ`, the determinant of the scattering matrix.
+```
+function testDelta(network::T) where {T <: AbstractNetwork}
+  @assert network.ports == 2 "Stability tests must be performed on two port networks"
+  return [det(param) for param in network.s_params]
+end
+
+```
+  testMagDelta(network)
+
+Returns a vector of `Δ`, the determinant of the scattering matrix.
+```
+function testMagDelta(network::T) where {T <: AbstractNetwork}
+  @assert network.ports == 2 "Stability tests must be performed on two port networks"
+  return [abs(x) for x in testDelta(network)]
+end
+
+```
+  testK(network)
+
+Returns a vector of the magnitude of `K`, the Rollet stability factor.
+```
+function testK(network::T) where {T <: AbstractNetwork}
+  @assert network.ports == 2 "Stability tests must be performed on two port networks"
+  magDelta = [abs(delta) for delta in testDelta(network)]
+  return [(1 - abs(network.s_params[i][1,1])^2 - abs(network.s_params[i][2,2])^2 + magDelta[i]^2) /
+          (2*abs(network.s_params[i][1,2])*abs(network.s_params[i][2,1])) for i = 1:length(network.frequency)]
+end
 # Sub files, these need to be at the end here such that the files have access
 # to the types defined in this file
 include("NetworkParameters.jl")

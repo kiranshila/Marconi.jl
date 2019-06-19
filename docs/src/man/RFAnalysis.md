@@ -4,6 +4,11 @@ Pages = ["RFAnalysis.md"]
 Depth = 3
 ```
 
+```@eval
+cd("../../..") # hide
+cp("examples/CE3520K3.s2p","docs/build/man/CE3520K3.s2p", force = true) # hide
+```
+
 ## The Network Object
 Marconi is structured around a base `AbstractNetwork` object. This object can be
 constructed with data, equations, and the combination of other networks.
@@ -64,3 +69,83 @@ end
 
 tline = EquationNetwork(2,50,idealTransmissionLine)
 ```
+
+## Stability Analysis
+
+One of the most important aspects in active microwave design is that of stability.
+
+When designing an amplifier, we do not want oscillations on either of the ports. An oscillation would imply that $|\Gamma_{In}| > 1$ or $|\Gamma_{Out}| > 1$.
+
+As both of these gammas depend on the input and output matching networks, the stability of an amplifier depends on $\Gamma_{S}$ and $\Gamma_{L}$.
+
+There are two different kinds of stability:
+* Unconditional Stability - $|\Gamma_{In}| < 1$ and $|\Gamma_{Out}| < 1$ for all source and load impedances
+* Conditional Stability - $|\Gamma_{In}| < 1$ and $|\Gamma_{Out}| < 1$ for certain impedances.
+
+To test for unconditional stability, we use the *Rollet Stability Criterion*
+
+```math
+K = \frac{1-|S_{11}|^2-|S_{22}|^2+|\Delta|^2}{2|S_{12}S_{21}|} > 1
+```
+
+
+along with the auxiliary condition that
+
+```math
+|\Delta| = |S_{11}S_{22}-S_{12}S_{21}| < 1
+```
+
+For a device to be unconditionally stable, both of these conditions must be satisfied.
+
+To test these conditions (or plot them), use the following functions:
+
+```@setup example_stab
+using Marconi
+using PGFPlotsX
+```
+
+*Example 12.2 from Microwave Engineering my David M. Pozar*
+```@example example_stab
+gan_hemt = [0.869*exp(deg2rad(-159)im) 4.250*exp(deg2rad(61)im);0.031*exp(deg2rad(-9)im) 0.507*exp(deg2rad(-117)im)]
+
+network = DataNetwork(2,50,[1.9e9],[gan_hemt])
+```
+We now compute `|Δ|` with
+```@example example_stab
+testMagDelta(network)[1] # Only 1 point in this data
+```
+
+and `K` with
+```@example example_stab
+testK(network)[1]
+```
+So, now we can conclude that this device is *NOT* unconditionally stable at 1.9 GHz as $|\Delta| < 1 $,but $K<1$.
+
+We can also plot the stability factors as a function of frequency to find stable regions.
+
+Take the data from this CE3520K3 low noise JFET:
+
+```@example example_stab
+jfet = readTouchstone("CE3520K3.s2p")
+
+# Plot our criteria
+ax = plotRectangular(jfet,testK,label="K")
+plotRectangular!(ax,jfet,testMagDelta,label=raw"$|\Delta|$")
+
+# Add a horizontal line to show stability regions
+push!(ax,@pgf(HLine(@pgf({"dashed"}),1)))
+
+# Adjust legend location
+ax["legend pos"] = "outer north east"
+
+# And a title, why not
+ax["title"] = "Stability Tests"
+
+# Make plot a little bigger
+ax["width"] = "15 cm"
+
+ax # hide
+```
+
+From this plot, we can conclude that under 50Ω matching on both ports,
+this device is unconditionally stable from 14-18 GHz and above 25 GHz as those two regions satisfy the criterion.
