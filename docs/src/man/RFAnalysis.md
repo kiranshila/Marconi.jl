@@ -7,6 +7,7 @@ Depth = 3
 ```@eval
 cd("../../..") # hide
 cp("examples/CE3520K3.s2p","docs/build/man/CE3520K3.s2p", force = true) # hide
+cp("examples/BPF.s2p","docs/build/man/BPF.s2p", force = true) # hide
 ```
 
 ## The Network Object
@@ -149,3 +150,39 @@ ax # hide
 
 From this plot, we can conclude that under 50Ω matching on both ports,
 this device is unconditionally stable from 14-18 GHz and above 25 GHz as those two regions satisfy the criterion.
+
+### Stability Circles
+
+To observe the behavior of potentially unstable devices, we can plot the region that would push the device into oscillation. The circle that bounds these impedances are *Stability Circles*.
+
+To plot these stability circles we can start with a network at one frequency:
+
+```@example example_stab
+LNA = DataNetwork(2,50,[800e6],[[∠(0.65,-95) ∠(0.035,40); ∠(5,115) ∠(0.8,-35)]])
+```
+
+Now we can plot the the source and load stability circles on a smith chart.
+
+```@example example_stab
+sc = SmithChart()
+plotSStabCircle!(sc,LNA,800e6)
+plotLStabCircle!(sc,LNA,800e6)
+```
+
+
+## VSWR Circles
+
+Some times it is helpful to draw VSWR circles to know the bandwidth of a network. This is done with
+
+```@setup vswr
+using Marconi
+using PGFPlotsX
+```
+
+```@example vswr
+# 10 dB RL == 1.92 VSWR
+circleStyle = @pgf {"thick", color = "black"}
+bpf = readTouchstone("BPF.s2p")
+sc = plotSmithData(bpf,(1,1))
+plotVSWR!(sc,1.92,opts = circleStyle)
+```

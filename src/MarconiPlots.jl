@@ -6,6 +6,9 @@ export plotSmithCircle!
 export plotFunctions
 export plotRectangular
 export plotRectangular!
+export plotSStabCircle!
+export plotLStabCircle!
+export plotVSWR!
 export dB
 
 """
@@ -34,7 +37,7 @@ function plotSmithData(network::T,parameter::Tuple{Int,Int};
     # Split into coordinates
     data = [(real(z),imag(z)) for z in data]
     # Create the PGFslotsX axis
-    p = @pgf SmithChart({axopts...},Plot({opts...},Coordinates(data)))
+    p = @pgf SmithChart({axopts...},PlotInc({mark = "none", opts...},Coordinates(data)))
     # Draw on smith chart
     return p
   elseif T == EquationNetwork
@@ -45,7 +48,7 @@ function plotSmithData(network::T,parameter::Tuple{Int,Int};
     # Add smith chart data
     data = [(real(z),imag(z)) for z in data]
     # Create the PGFslotsX axis
-    p = @pgf SmithChart({axopts...},Plot({opts...},Coordinates(data)))
+    p = @pgf SmithChart({axopts...},PlotInc({mark = "none", opts...},Coordinates(data)))
     # Draw on smith chart
     return p
   end
@@ -75,7 +78,7 @@ function plotSmithData!(smith::SmithChart, network::T,parameter::Tuple{Int,Int};
   data = [(1+datum)/(1-datum) for datum in data]
   # Split into coordinates
   data = [(real(z),imag(z)) for z in data]
-  push!(smith,@pgf Plot({opts...},Coordinates(data)))
+  push!(smith,@pgf PlotInc({mark = "none", opts...},Coordinates(data)))
   return smith
 end
 
@@ -93,7 +96,7 @@ function plotSmithCircle!(smith::SmithChart,xc::A,yc::B,rad::C;
   x = [rad*cosd(v) for v = -180:180]
   y = [rad*sind(v) for v = -180:180]
 
-  circle = @pgf Plot({"is smithchart cs", opts...},Coordinates(x.+xc,y.+yc))
+  circle = @pgf PlotInc({"is smithchart cs",mark="none", opts...},Coordinates(x.+xc,y.+yc))
   push!(smith,circle)
   return smith
 end
@@ -345,4 +348,48 @@ function plotRectangular!(ax::Axis, network::T,parameter::Tuple{Int,Int},pltFunc
   elseif T == EquationNetwork
     # FIXME
   end
+
+
+```
+  plotVSWR!(sc,VSWR)
+
+Plots the circle that represents a VSWR of `VSWR` onto an existing Smith Chart.
+```
+function plotVSWR!(sc::SmithChart,VSWR::Real;opts::PGFPlotsX.Options = @pgf({}))
+  Γ = (VSWR-1)/(VSWR+1)
+  return plotSmithCircle!(sc,0,0,Γ,opts=opts)
 end
+
+```
+  plotSStabCircle!(sc,network,freq)
+
+Plots the the source stability circle on Smith Chart `sc` from `network` at frequency `freq`.
+```
+function plotSStabCircle!(sc::SmithChart,network::T,freq::Real;opts::PGFPlotsX.Options = @pgf({})) where {T <: AbstractNetwork}
+  # Grab S-Params at the requested frequency
+  position = findall(x->x==freq, network.frequency)[1] # There should only be one
+  @assert position != nothing "Frequency not found in frequency list"
+  s = network.s_params[position]
+  rs = abs((s[1,2]*s[2,1]) / (abs(s[1,1])^2 - testMagDelta(network,pos = position)^2))
+  Cs = conj(s[1,1] - testDelta(network,pos = position) * conj(s[2,2])) /
+       (abs(s[1,1])^2 - testMagDelta(network,pos = position)^2)
+  plotSmithCircle!(sc,real(Cs),imag(Cs),rs,opts=opts)
+end
+
+```
+  plotLStabCircle!(sc,network,freq)
+
+Plots the the load stability circle on Smith Chart `sc` from `network` at frequency `freq`.
+```
+function plotLStabCircle!(sc::SmithChart,network::T,freq::Real;opts::PGFPlotsX.Options = @pgf({})) where {T <: AbstractNetwork}
+  # Grab S-Params at the requested frequency
+  position = findall(x->x==freq, network.frequency)[1] # There should only be one
+  @assert position != nothing "Frequency not found in frequency list"
+  s = network.s_params[position]
+  rs = abs((s[1,2]*s[2,1]) / (abs(s[2,2])^2 - testMagDelta(network,pos = position)^2))
+  Cs = conj(s[2,2] - testDelta(network,pos = position) * conj(s[1,1])) /
+       (abs(s[2,2])^2 - testMagDelta(network,pos = position)^2)
+  plotSmithCircle!(sc,real(Cs),imag(Cs),rs,opts=opts)
+end
+
+end # EOF

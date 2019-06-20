@@ -142,10 +142,8 @@ using PGFPlotsX
 
 ```@example example_rec
 amp = readTouchstone("Amp.s2p")
-style1 = @pgf {color = "red", "thick"}
-style2 = @pgf {color = "blue", "thick"}
-ax = plotRectangular(amp,(1,1),dB,opts = style1)
-plotRectangular!(ax,amp,(2,1),dB,opts = style2)
+ax = plotRectangular(amp,(1,1),dB)
+plotRectangular!(ax,amp,(2,1),dB)
 ```
 
 

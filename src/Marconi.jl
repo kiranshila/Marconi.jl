@@ -13,6 +13,7 @@ export EquationNetwork
 export testDelta
 export testMagDelta
 export testK
+export ∠
 
 abstract type AbstractNetwork end
 
@@ -245,20 +246,30 @@ end
   testDelta(network)
 
 Returns a vector of `Δ`, the determinant of the scattering matrix.
+Optionally, returns `Δ` for S-Parameters at position `pos`.
 ```
-function testDelta(network::T) where {T <: AbstractNetwork}
+function testDelta(network::T;pos::Int = 0) where {T <: AbstractNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
-  return [det(param) for param in network.s_params]
+  if pos == 0
+    return [det(param) for param in network.s_params]
+  else
+    return det(network.s_params[pos])
+  end
 end
 
 ```
   testMagDelta(network)
 
 Returns a vector of `Δ`, the determinant of the scattering matrix.
+Optionally, returns `|Δ|` for S-Parameters at position `pos`.
 ```
-function testMagDelta(network::T) where {T <: AbstractNetwork}
+function testMagDelta(network::T; pos::Int = 0) where {T <: AbstractNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
-  return [abs(x) for x in testDelta(network)]
+  if pos == 0
+    return [abs(x) for x in testDelta(network)]
+  else
+    return abs(testDelta(network,pos=pos))
+  end
 end
 
 ```
@@ -266,12 +277,25 @@ end
 
 Returns a vector of the magnitude of `K`, the Rollet stability factor.
 ```
-function testK(network::T) where {T <: AbstractNetwork}
+function testK(network::T;pos = 0) where {T <: AbstractNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
-  magDelta = [abs(delta) for delta in testDelta(network)]
-  return [(1 - abs(network.s_params[i][1,1])^2 - abs(network.s_params[i][2,2])^2 + magDelta[i]^2) /
-          (2*abs(network.s_params[i][1,2])*abs(network.s_params[i][2,1])) for i = 1:length(network.frequency)]
+  if pos == 0
+    magDelta = [abs(delta) for delta in testDelta(network)]
+    return [(1 - abs(network.s_params[i][1,1])^2 - abs(network.s_params[i][2,2])^2 + magDelta[i]^2) /
+            (2*abs(network.s_params[i][1,2])*abs(network.s_params[i][2,1])) for i = 1:length(network.frequency)]
+  else
+    return (1 - abs(network.s_params[pos][1,1])^2 - abs(network.s_params[pos][2,2])^2 + testMagDelta(network,pos=pos)^2) /
+           (2*abs(network.s_params[pos][1,2])*abs(network.s_params[pos][2,1]))
+  end
 end
+
+```
+  ∠(mag,angle)
+
+A nice compact way of representing phasors. Angle is in degrees.
+```
+∠(a,b) = a*exp(im*deg2rad(b))
+
 # Sub files, these need to be at the end here such that the files have access
 # to the types defined in this file
 include("NetworkParameters.jl")
