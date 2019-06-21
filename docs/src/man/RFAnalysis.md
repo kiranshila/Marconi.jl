@@ -142,9 +142,6 @@ ax["legend pos"] = "outer north east"
 # And a title, why not
 ax["title"] = "Stability Tests"
 
-# Make plot a little bigger
-ax["width"] = "15 cm"
-
 ax # hide
 ```
 
@@ -165,8 +162,8 @@ Now we can plot the the source and load stability circles on a smith chart.
 
 ```@example example_stab
 sc = SmithChart()
-plotSStabCircle!(sc,LNA,800e6)
-plotLStabCircle!(sc,LNA,800e6)
+plotSStabCircle!(sc,LNA,800e6,label="Source Stability")
+plotLStabCircle!(sc,LNA,800e6,label="Load Stability")
 ```
 
 
@@ -183,6 +180,13 @@ using PGFPlotsX
 # 10 dB RL == 1.92 VSWR
 circleStyle = @pgf {"thick", color = "black"}
 bpf = readTouchstone("BPF.s2p")
-sc = plotSmithData(bpf,(1,1))
-plotVSWR!(sc,1.92,opts = circleStyle)
+sc = plotSmithData(bpf,(1,1),label="S(1,1)")
+plotVSWR!(sc,1.92,opts = circleStyle,label="VSWR = 1.92")
 ```
+
+## Gain Equations
+### Operating Power Gain
+### Transducer Gain
+### Unilateral Transducer Gain
+### Available Gain
+### Gain Circles

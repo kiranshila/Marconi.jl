@@ -242,12 +242,12 @@ function isReciprocal(network::T) where {T <: AbstractNetwork}
   return true
 end
 
-```
-  testDelta(network)
+"""
+    testDelta(network)
 
 Returns a vector of `Δ`, the determinant of the scattering matrix.
 Optionally, returns `Δ` for S-Parameters at position `pos`.
-```
+"""
 function testDelta(network::T;pos::Int = 0) where {T <: AbstractNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
@@ -257,12 +257,12 @@ function testDelta(network::T;pos::Int = 0) where {T <: AbstractNetwork}
   end
 end
 
-```
-  testMagDelta(network)
+"""
+    testMagDelta(network)
 
 Returns a vector of `Δ`, the determinant of the scattering matrix.
 Optionally, returns `|Δ|` for S-Parameters at position `pos`.
-```
+"""
 function testMagDelta(network::T; pos::Int = 0) where {T <: AbstractNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
@@ -272,11 +272,11 @@ function testMagDelta(network::T; pos::Int = 0) where {T <: AbstractNetwork}
   end
 end
 
-```
-  testK(network)
+"""
+    testK(network)
 
 Returns a vector of the magnitude of `K`, the Rollet stability factor.
-```
+"""
 function testK(network::T;pos = 0) where {T <: AbstractNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
@@ -289,12 +289,14 @@ function testK(network::T;pos = 0) where {T <: AbstractNetwork}
   end
 end
 
-```
-  ∠(mag,angle)
+"""
+    ∠(mag,angle)
 
 A nice compact way of representing phasors. Angle is in degrees.
-```
-∠(a,b) = a*exp(im*deg2rad(b))
+"""
+function ∠(a,b)
+  a*exp(im*deg2rad(b))
+end
 
 # Sub files, these need to be at the end here such that the files have access
 # to the types defined in this file

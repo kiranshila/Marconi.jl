@@ -64,6 +64,11 @@ with `plotSmithData`.
 plotSmithData(bpf,(1,1))
 ```
 
+To add labels to any plot, we just call any of the plotting functions with the `label` kwarg.
+```@example plot1
+plotSmithData(bpf,(1,1),label="S(1,1)")
+```
+
 #### Plotting with Equation-Driven Networks
 To plot with an `EquationNetwork`, we must also provide the frequencies to plot. This is done with the additional kwarg `freqs`
 
@@ -142,8 +147,10 @@ using PGFPlotsX
 
 ```@example example_rec
 amp = readTouchstone("Amp.s2p")
-ax = plotRectangular(amp,(1,1),dB)
-plotRectangular!(ax,amp,(2,1),dB)
+ax = plotRectangular(amp,(1,1),dB,label="S(1,1)")
+plotRectangular!(ax,amp,(2,1),dB,label="S(2,1)")
+ax["ylabel"] = "dB"
+ax # hide
 ```
 
 
