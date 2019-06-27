@@ -2,6 +2,8 @@ module Marconi
 
 import Base.show
 using LinearAlgebra
+using Interpolations
+using Printf
 
 # Package exports
 export readTouchstone
@@ -14,6 +16,11 @@ export testDelta
 export testMagDelta
 export testK
 export ∠
+export inputZ
+export Γ
+export interpolate
+export complex2angleString
+export complex2angle
 
 abstract type AbstractNetwork end
 
@@ -238,7 +245,12 @@ end
 
 
 function isReciprocal(network::T) where {T <: AbstractNetwork}
-  #FIXME
+  # FIXME
+  return true
+end
+
+function isLossless(network::T) where {T <: AbstractNetwork}
+  # FIXME
   return true
 end
 
@@ -298,9 +310,64 @@ function ∠(a,b)
   a*exp(im*deg2rad(b))
 end
 
+"""
+    inputZ(Zr,Θ,Z0)
+
+Calculates the input impedace of a lossless transmission line of length `θ` in degrees terminated with `Zr`.
+Z0 is optional and defaults to 50.
+"""
+inputZ(Zr,θ;Z0=50.) = Z0*((Zr+Z0*im*tand(θ))/(Z0+Zr*im*tand(θ)))
+
+"""
+    inputZ(Γ,Z0)
+
+Calculates the input impedace from complex reflection coefficient `Γ`.
+Z0 is optional and defaults to 50.
+"""
+inputZ(Γ;Z0=50.) = Z0*(1+Γ)/(1-Γ)
+
+"""
+    Γ(Z,Z0)
+
+Calculates the complex reflection coefficient `Γ` from impedance `Z`.
+Z0 is optional and defaults to 50.
+"""
+Γ(Z;Z0=50.) = (Z-Z0)/(Z+Z0)
+
+"""
+    interpolate(network,frequencies)
+
+Returns a new network object that contains data from `network` reinterpolated
+to fit `frequencies`.
+"""
+# FIXME FIXME
+function interpolate(network::DataNetwork,freqs::Array{T,1}) where {T <: Real}
+  # Use BSplines for evenly spaced data, grids for uneven
+  # First test for spacing
+  spacing = network.frequency[2]-network.frequency[1]
+  isEven = true
+  for i in 2:length(network.frequency)-1
+    next_freq = network.frequency[i]+spacing
+    if network.frequency[i+1] != next_freq
+      isEven = false
+      break
+    end
+  end
+  return isEven
+end
+
+complex2angle(num::Complex) = (abs(num),atand(imag(num),real(num)))
+
+function complex2angleString(num::Complex)
+  vals = complex2angle(num)
+  @sprintf "%.3f∠%.3f°" vals[1] vals[2]
+end
+
+
+
 # Sub files, these need to be at the end here such that the files have access
 # to the types defined in this file
 include("NetworkParameters.jl")
 include("MarconiPlots.jl")
-
+include("SignalFlow.jl")
 end # Module End

@@ -186,10 +186,10 @@ function plotRectangular(network::T,
 
     # Create the PGFslotsX axis
     if label != nothing
-      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({opts...},Coordinates(data)),LegendEntry(label))
+      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none",opts...},Coordinates(data)),LegendEntry(label))
       return p
     else
-      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({opts...},Coordinates(data)))
+      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none",opts...},Coordinates(data)))
       return p
     end
   elseif T == EquationNetwork
@@ -371,7 +371,7 @@ function plotRectangular!(ax::Axis,
     xlabel = "Frequency ($(multiplierString)Hz)"
 
     # Create the PGFslotsX plot
-    plt = @pgf PlotInc({opts...},Coordinates(data))
+    plt = @pgf PlotInc({mark = "none", opts...},Coordinates(data))
 
     # Push to axis
     push!(ax,plt)

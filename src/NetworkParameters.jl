@@ -4,6 +4,9 @@ using LinearAlgebra
 export y2s
 export z2s
 export s2z
+export s2t
+export t2s
+export cascade
 
 """
         y2s(y)
@@ -47,8 +50,29 @@ function s2z(s::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
     return sqrtZref*(I-s)^-1*(I+s)*sqrtZref
 end
 
-function h2s(h::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+"""
+        s2t(s)
+
+Converts S-Parameters `s` to T-Parameters.
+"""
+function s2t(s::Array{T,2}) where {T <: Number}
+    @assert size(s)[1] == 2 "s2t is only supported for 2 ports"
+    return (1/s[2,1]) .* [s[1,2]*s[2,1] - s[1,1]*s[2,2] s[1,1];-s[2,2] 1]
 end
 
-function g2s(g::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+"""
+        t2s(t)
+
+Converts T-Parameters `t` to S-Parameters.
+"""
+function t2s(t::Array{T,2}) where {T <: Number}
+    @assert size(t)[1] == 2 "t2s is only supported for 2 ports"
+    return [t[1,2]/t[2,2] t[1,1]-((t[1,2]*t[2,1])/t[2,2]);
+            1/t[2,2] -t[2,1]/t[2,2]]
+end
+
+function cascade(networks::T...) where {T <: AbstractNetwork}
+    @assert length(networks) >= 2 "Must have at least two networks to cascade."
+    t_networks = [[s2t(params) for params in network.s_params] for network in networks]
+    return t_networks
 end

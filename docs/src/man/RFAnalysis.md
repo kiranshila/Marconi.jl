@@ -22,6 +22,9 @@ To build a network from a Touchstone file see [File IO](@ref), otherwise we can 
 Besides `ports` and `Z0`, a `DataNetwork` must also have `frequency`, a vector of frequencies for which the network is characterized,
 and `s_params`, for the S-Parameters themselves.
 
+As of this release, the `frequency`/`s_params` lists must be ordered. If they are not
+evenly-spaced, all interpolation operations will be Grid interpolations instead of splines.
+
 ```@example
 using Marconi # hide
 # DataNetwork(ports,Z0,frequency,s_params)
@@ -190,3 +193,24 @@ plotVSWR!(sc,1.92,opts = circleStyle,label="VSWR = 1.92")
 ### Unilateral Transducer Gain
 ### Available Gain
 ### Gain Circles
+
+## Transmission Line Calculations
+Marconi provides some basic calculations for transmission lines:
+
+```@setup tline
+using Marconi
+```
+
+```@example tline
+# Input impedance of lossless t-line terminated in Zr
+Θ = 35
+Zr = 100+im*50
+Zin = inputZ(Zr,Θ)
+```
+
+And to show the behavior we expect from a λ/4 line:
+```@example tline
+Θ = 89.99
+Zr = 1e99+0im
+Zin = inputZ(Zr,Θ)
+```
