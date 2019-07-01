@@ -369,6 +369,8 @@ function interpolate(network::DataNetwork,freqs::Array{T,1}) where {T <: Real}
   DataNetwork(network.ports,network.Z0,freqs,[map(x->x(f),interps) for f in freqs])
 end
 
+interpolate(network::DataNetwork,freqs::Union{UnitRange,StepRangeLen}) = interpolate(network,Array(freqs))
+
 complex2angle(num::Complex) = (abs(num),atand(imag(num),real(num)))
 
 function complex2angleString(num::Complex)
