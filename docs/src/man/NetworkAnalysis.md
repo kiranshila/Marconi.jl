@@ -37,5 +37,30 @@ amp_morePoints = interpolate(amp,range(10e6,stop=18e9,length=1001))
 As typical with interpolations, one can only interpolate between the bounds of the source data.
 
 ## Cascading Networks
+For working with 2-Port networks, cascading multiple networks can be helpful for finding system
+performance, embedding, and deembedding.
+
+`cascade` takes `n` number of 2-Port networks and returns a new `DataNetwork` that is the cascaded
+result of all the networks. This function interpolates all networks to their overlapping frequency range,
+converts to T-Parameters, and cascades with matrix multiplication.
+
+```@setup cascade
+using Marconi
+using PGFPlotsX
+```
+
+Here are two networks individually, an amplifier and band-pass filter
+```@example cascade
+amp = readTouchstone("Amp.s2p")
+bpf = readTouchstone("BPF.s2p")
+ax = plotRectangular(amp,(2,1))
+plotRectangular!(ax,bpf,(2,1))
+```
+
+And cascading Port 1 -> BPF -> Amp -> Port 2
+```@example cascade
+system = cascade(bpf,amp)
+plotRectangular!(ax,system,(2,1))
+```
 
 ### Cascading Data Networks with Equation-Driven Networks

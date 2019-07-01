@@ -71,8 +71,69 @@ function t2s(t::Array{T,2}) where {T <: Number}
             1/t[2,2] -t[2,1]/t[2,2]]
 end
 
-function cascade(networks::T...) where {T <: AbstractNetwork}
+"""
+    interpolate(network,frequencies)
+
+Returns a new network object that contains data from `network` reinterpolated
+to fit `frequencies`.
+"""
+function interpolate(network::DataNetwork,freqs::Array{T,1}) where {T <: Real}
+  # Use BSplines for evenly spaced data, grids for uneven
+  # First test for spacing
+  spacing = network.frequency[2]-network.frequency[1]
+  isEven = true
+  for i in 2:length(network.frequency)-1
+    next_freq = network.frequency[i]+spacing
+    if network.frequency[i+1] != next_freq
+      isEven = false
+      break
+    end
+  end
+  # Collect each S_Parameter slice down the frequency axis
+  interps = Matrix{Any}(undef, network.ports,network.ports)
+  if isEven
+    # Create spacing range
+    thisRange = range(network.frequency[1],stop=network.frequency[end],step=spacing)
+    for i in 1:network.ports, j in 1:network.ports
+      interps[i,j] = CubicSplineInterpolation(thisRange,[param[i,j] for param in network.s_params])
+    end
+  else
+    for i in 1:network.ports, j in 1:network.ports
+      interps[i,j] = LinearInterpolation(network.frequency, [param[i,j] for param in network.s_params])
+    end
+  end
+  # Return network object with interpolated values
+  DataNetwork(network.ports,network.Z0,freqs,[map(x->x(f),interps) for f in freqs])
+end
+
+interpolate(network::DataNetwork,freqs::Union{UnitRange,StepRangeLen}) = interpolate(network,Array(freqs))
+
+"""
+    cascade(net1,net2,net3,...,netN)
+
+Returns a new `DataNetwork` that is the cascaded result of net1,net2,net3,...netN where the `nets` are
+2-Port `DataNetwork` objects. Optionally takes kwarg `numpoints` for how many points in the result.
+"""
+function cascade(networks::T...;numpoints = 401) where {T <: AbstractNetwork}
     @assert length(networks) >= 2 "Must have at least two networks to cascade."
-    t_networks = [[s2t(params) for params in network.s_params] for network in networks]
-    return t_networks
+    for network in networks
+        @assert network.ports == 2 "Cascade is for 2-Port networks, use `wire` for n-port"
+    end
+
+    # Find frequency range of result
+    f_low = max([network.frequency[1] for network in networks] ...)
+    f_high = min([network.frequency[end] for network in networks] ...)
+    f_range = range(f_low,stop=f_high,length=numpoints)
+
+    # Reinterpolate all the newtorks to match
+    networks = [interpolate(network,f_range) for network in networks]
+
+    # Convert to T networks
+    t_params = [[s2t(params) for params in network.s_params] for network in networks]
+
+    # Cascade
+    cascade_result = [*([t_params[j][i] for j in 1:length(networks)] ...) for i in 1:numpoints]
+
+    # Create new network and return
+    return DataNetwork(2,50,Array(f_range),[t2s(t) for t in cascade_result])
 end

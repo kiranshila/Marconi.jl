@@ -334,43 +334,6 @@ Z0 is optional and defaults to 50.
 """
 Γ(Z;Z0=50.) = (Z-Z0)/(Z+Z0)
 
-"""
-    interpolate(network,frequencies)
-
-Returns a new network object that contains data from `network` reinterpolated
-to fit `frequencies`.
-"""
-function interpolate(network::DataNetwork,freqs::Array{T,1}) where {T <: Real}
-  # Use BSplines for evenly spaced data, grids for uneven
-  # First test for spacing
-  spacing = network.frequency[2]-network.frequency[1]
-  isEven = true
-  for i in 2:length(network.frequency)-1
-    next_freq = network.frequency[i]+spacing
-    if network.frequency[i+1] != next_freq
-      isEven = false
-      break
-    end
-  end
-  # Collect each S_Parameter slice down the frequency axis
-  interps = Matrix{Any}(undef, network.ports,network.ports)
-  if isEven
-    # Create spacing range
-    thisRange = range(network.frequency[1],stop=network.frequency[end],step=spacing)
-    for i in 1:network.ports, j in 1:network.ports
-      interps[i,j] = CubicSplineInterpolation(thisRange,[param[i,j] for param in network.s_params])
-    end
-  else
-    for i in 1:network.ports, j in 1:network.ports
-      interps[i,j] = LinearInterpolation(network.frequency, [param[i,j] for param in network.s_params])
-    end
-  end
-  # Return network object with interpolated values
-  DataNetwork(network.ports,network.Z0,freqs,[map(x->x(f),interps) for f in freqs])
-end
-
-interpolate(network::DataNetwork,freqs::Union{UnitRange,StepRangeLen}) = interpolate(network,Array(freqs))
-
 complex2angle(num::Complex) = (abs(num),atand(imag(num),real(num)))
 
 function complex2angleString(num::Complex)
