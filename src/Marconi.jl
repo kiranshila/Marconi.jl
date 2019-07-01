@@ -340,7 +340,6 @@ Z0 is optional and defaults to 50.
 Returns a new network object that contains data from `network` reinterpolated
 to fit `frequencies`.
 """
-# FIXME FIXME
 function interpolate(network::DataNetwork,freqs::Array{T,1}) where {T <: Real}
   # Use BSplines for evenly spaced data, grids for uneven
   # First test for spacing
@@ -353,7 +352,21 @@ function interpolate(network::DataNetwork,freqs::Array{T,1}) where {T <: Real}
       break
     end
   end
-  return isEven
+  # Collect each S_Parameter slice down the frequency axis
+  interps = Matrix{Any}(undef, network.ports,network.ports)
+  if isEven
+    # Create spacing range
+    thisRange = range(network.frequency[1],stop=network.frequency[end],step=spacing)
+    for i in 1:network.ports, j in 1:network.ports
+      interps[i,j] = CubicSplineInterpolation(thisRange,[param[i,j] for param in network.s_params])
+    end
+  else
+    for i in 1:network.ports, j in 1:network.ports
+      interps[i,j] = LinearInterpolation(network.frequency, [param[i,j] for param in network.s_params])
+    end
+  end
+  # Return network object with interpolated values
+  DataNetwork(network.ports,network.Z0,freqs,[map(x->x(f),interps) for f in freqs])
 end
 
 complex2angle(num::Complex) = (abs(num),atand(imag(num),real(num)))
@@ -369,5 +382,4 @@ end
 # to the types defined in this file
 include("NetworkParameters.jl")
 include("MarconiPlots.jl")
-include("SignalFlow.jl")
 end # Module End
