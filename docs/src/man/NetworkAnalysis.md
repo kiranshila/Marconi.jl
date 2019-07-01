@@ -28,7 +28,7 @@ using PGFPlotsX
 # Uneven network
 amp = readTouchstone("Amp.s2p")
 ```
-This network has 899 points from 10 MHz to 18 GHz. Let's reinterpret it to more points.
+This network has 879 points from 10 MHz to 18 GHz. Let's reinterpret it to more points.
 
 ```@example interpolation
 amp_morePoints = interpolate(amp,range(10e6,stop=18e9,length=1001))
