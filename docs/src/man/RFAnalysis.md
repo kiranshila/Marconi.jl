@@ -8,6 +8,7 @@ Depth = 3
 cd("../../..") # hide
 cp("examples/CE3520K3.s2p","docs/build/man/CE3520K3.s2p", force = true) # hide
 cp("examples/BPF.s2p","docs/build/man/BPF.s2p", force = true) # hide
+nothing
 ```
 
 ## The Network Object

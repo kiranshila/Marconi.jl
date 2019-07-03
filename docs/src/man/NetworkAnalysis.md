@@ -18,6 +18,7 @@ interpolation.
 cd("../../..") # hide
 cp("examples/Amp.s2p","docs/build/man/Amp.s2p", force = true) # hide
 cp("examples/CE3520K3.s2p","docs/build/man/CE3520K3.s2p", force = true) # hide
+nothing
 ```
 
 ```@setup interpolation

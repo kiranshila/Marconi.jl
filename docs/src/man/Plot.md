@@ -27,6 +27,7 @@ empty `SmithChart` axis object from `PGFPlotsX`.
 cd("../../..") # hide
 cp("examples/BPF.s2p","docs/build/man/BPF.s2p", force = true) # hide
 cp("examples/Amp.s2p","docs/build/man/Amp.s2p", force = true) # hide
+nothing
 ```
 
 ```@example plot1
