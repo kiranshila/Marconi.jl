@@ -21,6 +21,7 @@ export Γ
 export interpolate
 export complex2angleString
 export complex2angle
+export equationToDataNetwork
 
 abstract type AbstractNetwork end
 
@@ -44,7 +45,7 @@ end
 """
 The base Network type for representing n-port linear networks with characteristic impedance Z0.
   The S-Parameters for an EquationNetwork are defined by a function that returns a `ports`-square matrix
-  and accepts kwargs `Z0` and `freq`.
+  and accepts kwargs `Z0` and `freq`. Please provide default arguments for any input parameters.
 """
 mutable struct EquationNetwork <: AbstractNetwork
   ports::Int
@@ -60,6 +61,15 @@ mutable struct EquationNetwork <: AbstractNetwork
     end
     new(ports,Z0,eq)
   end
+end
+
+"""
+    equationToDataNetwork(equationNet,args=(arg1,arg2),freqs=[1,2,3])
+Utility function to convert an equation network to a data network by evaluating it at every frequency in the list
+or range `freqs`.
+"""
+function equationToDataNetwork(network::EquationNetwork;args::Tuple=(),freqs::Union{StepRangeLen,Array})
+  DataNetwork(network.ports,network.Z0,Array(freqs),[network.eq(args...,Z0=network.Z0,freq = f) for f in freqs])
 end
 
 function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
@@ -260,7 +270,7 @@ end
 Returns a vector of `Δ`, the determinant of the scattering matrix.
 Optionally, returns `Δ` for S-Parameters at position `pos`.
 """
-function testDelta(network::T;pos::Int = 0) where {T <: AbstractNetwork}
+function testDelta(network::T;pos::Int = 0) where {T <: DataNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
     return [det(param) for param in network.s_params]
@@ -275,7 +285,7 @@ end
 Returns a vector of `Δ`, the determinant of the scattering matrix.
 Optionally, returns `|Δ|` for S-Parameters at position `pos`.
 """
-function testMagDelta(network::T; pos::Int = 0) where {T <: AbstractNetwork}
+function testMagDelta(network::T; pos::Int = 0) where {T <: DataNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
     return [abs(x) for x in testDelta(network)]
@@ -289,7 +299,7 @@ end
 
 Returns a vector of the magnitude of `K`, the Rollet stability factor.
 """
-function testK(network::T;pos = 0) where {T <: AbstractNetwork}
+function testK(network::T;pos = 0) where {T <: DataNetwork}
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
     magDelta = [abs(delta) for delta in testDelta(network)]

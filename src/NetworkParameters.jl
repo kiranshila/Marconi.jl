@@ -1,44 +1,23 @@
 using LinearAlgebra
 
 # Export Network Parameters
-export y2s
-export z2s
 export s2z
+export s2y
 export s2t
+
+export z2s
+export z2y
+export z2t
+
+export y2s
+export y2z
+export y2t
+
 export t2s
+
 export cascade
 
-"""
-        y2s(y)
-
-Converts Y-Parameters `y` to S-Parameters. Optionally include reference
-impedance with kwarg `Z0` with `y2s(y,Z0=50)`.
-"""
-function y2s(y::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
-    # We have to downcast to complex because of type weirdness in Diagonal
-    Gref = Diagonal([1/√(abs(real(Z0))) for i in 1:size(y)[1]])
-    Zref = Diagonal([Z0 for i in 1:size(y)[1]])
-
-    return Gref * (convert(Array{Complex{Float64},2},I - Zref * y)) *
-                  (convert(Array{Complex{Float64},2},I + Zref * y))^-1 *
-                  complex(Gref)^-1
-end
-
-"""
-        z2s(z)
-
-Converts Z-Parameters `z` to S-Parameters. Optionally include reference
-impedance with kwarg `Z0` with `z2s(z,Z0=50)`.
-"""
-function z2s(z::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
-    Gref = Diagonal([1/√(abs(real(Z0))) for i in 1:size(z)[1]])
-    Zref = Diagonal([Z0 for i in 1:size(z)[1]])
-
-    return Gref * (convert(Array{Complex{Float64},2},z - Zref)) *
-                  (convert(Array{Complex{Float64},2},z + Zref))^-1 *
-                  complex(Gref)^-1
-end
-
+#  =============== From S-Parameters =============== #
 """
         s2z(s)
 
@@ -47,7 +26,18 @@ impedance with kwarg `Z0` with `s2z(s,Z0=50)`.
 """
 function s2z(s::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
     sqrtZref = Diagonal([√(Z0) for i in 1:size(s)[1]])
-    return sqrtZref*(I-s)^-1*(I+s)*sqrtZref
+    return sqrtZref*(I+s)*(I-s)^-1*sqrtZref
+end
+
+"""
+        s2y(s)
+
+Converts S-Parameters `s` to Y-Parameters. Optionally include reference
+impedance with kwarg `Z0` with `s2z(s,Z0=50)`.
+"""
+function s2y(s::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+    sqrtYref = Diagonal([√(1/Z0) for i in 1:size(s)[1]])
+    return sqrtYref*(I-s)*(I+s)^-1*sqrtYref
 end
 
 """
@@ -60,6 +50,70 @@ function s2t(s::Array{T,2}) where {T <: Number}
     return (1/s[2,1]) .* [s[1,2]*s[2,1] - s[1,1]*s[2,2] s[1,1];-s[2,2] 1]
 end
 
+#  =============== From Z-Parameters =============== #
+"""
+        z2s(z)
+
+Converts Z-Parameters `z` to S-Parameters. Optionally include reference
+impedance with kwarg `Z0` with `z2s(z,Z0=50)`.
+"""
+function z2s(z::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+    sqrtYref = Diagonal([√(1/Z0) for i in 1:size(z)[1]])
+    return (sqrtYref * z * sqrtYref - I)*(sqrtYref*z*sqrtYref + I)^-1
+end
+
+"""
+        z2y(z)
+
+Converts Z-Parameters `z` to Y-Parameters.
+"""
+function z2y(z::Array{A,2}) where {A <: Number}
+    return z^-1
+end
+
+"""
+        z2t(z)
+
+Converts Z-Parameters `z` to T-Parameters. Optionally include reference
+impedance with kwarg `Z0` with `z2s(z,Z0=50)`.
+"""
+function z2t(z::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+    return s2t(z2s(z,Z0=Z0))
+end
+
+#  =============== From Y-Parameters =============== #
+"""
+        y2s(y)
+
+Converts Y-Parameters `y` to S-Parameters. Optionally include reference
+impedance with kwarg `Z0` with `y2s(y,Z0=50)`.
+"""
+function y2s(y::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+    sqrtZref = Diagonal([√(Z0) for i in 1:size(y)[1]])
+    return (I-sqrtZref*y*sqrtZref)*(I+sqrtZref*y*sqrtZref)^-1
+end
+
+"""
+        y2z(y)
+
+Converts Y-Parameters `y` to Z-Parameters.
+"""
+function y2z(y::Array{A,2}) where {A <: Number}
+    return y^-1
+end
+
+"""
+        y2t(y)
+
+Converts Y-Parameters `y` to T-Parameters. Optionally include reference
+impedance with kwarg `Z0` with `y2s(y,Z0=50)`.
+"""
+function y2t(y::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+    return s2t(y2s(y,Z0=Z0))
+end
+
+#  =============== From T-Parameters =============== #
+
 """
         t2s(t)
 
@@ -70,6 +124,8 @@ function t2s(t::Array{T,2}) where {T <: Number}
     return [t[1,2]/t[2,2] t[1,1]-((t[1,2]*t[2,1])/t[2,2]);
             1/t[2,2] -t[2,1]/t[2,2]]
 end
+
+#  =============== Network Functions =============== #
 
 """
     interpolate(network,frequencies)

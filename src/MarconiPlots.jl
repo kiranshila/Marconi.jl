@@ -21,6 +21,7 @@ function plotSmithData(network::T,parameter::Tuple{Int,Int};
                   axopts::PGFPlotsX.Options = @pgf({}),
                   opts::PGFPlotsX.Options = @pgf({}),
                   freqs::Union{StepRangeLen,Array, Nothing} = nothing,
+                  args::Tuple = (),
                   label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
   # Check that data is in bounds
   if parameter[1] > network.ports || parameter[1] < 1
@@ -32,34 +33,22 @@ function plotSmithData(network::T,parameter::Tuple{Int,Int};
   if T == DataNetwork
     # Collect the data we want
     data = [s[parameter[1],parameter[2]] for s in network.s_params]
-    # Convert to normalized input impedance
-    data = [(1+datum)/(1-datum) for datum in data]
-    # Split into coordinates
-    data = [(real(z),imag(z)) for z in data]
-    # Create the PGFslotsX axis
-    if label != nothing
-      p = @pgf SmithChart({axopts...},PlotInc({mark = "none", opts...},Coordinates(data)),LegendEntry(label))
-    else
-      p = @pgf SmithChart({axopts...},PlotInc({mark = "none", opts...},Coordinates(data)))
-    end
-    # Draw on smith chart
-    return p
   elseif T == EquationNetwork
-    # Grab s-parameter data for each frequency
-    data = [network.eq(freq=x,Z0=network.Z0) for x in freqs]
-    # Convert to normalized input impedance
-    data = [(1+datum)/(1-datum) for datum in data]
-    # Add smith chart data
-    data = [(real(z),imag(z)) for z in data]
-    # Create the PGFslotsX axis
-    if label != nothing
-      p = @pgf SmithChart({axopts...},PlotInc({mark = "none", opts...},Coordinates(data)),LegendEntry(label))
-    else
-      p = @pgf SmithChart({axopts...},PlotInc({mark = "none", opts...},Coordinates(data)))
-    end
-    # Draw on smith chart
-    return p
+    # Sample eq at each freq of interest
+    data = [network.eq(args...,freq=x,Z0=network.Z0) for x in freqs]
   end
+  # Convert to normalized input impedance
+  data = [(1+datum)/(1-datum) for datum in data]
+  # Split into coordinates
+  data = [(real(z),imag(z)) for z in data]
+  # Create the PGFslotsX axis
+  if label != nothing
+    p = @pgf SmithChart({axopts...},PlotInc({mark = "none", opts...},Coordinates(data)),LegendEntry(label))
+  else
+    p = @pgf SmithChart({axopts...},PlotInc({mark = "none", opts...},Coordinates(data)))
+  end
+  # Draw on smith chart
+  return p
 end
 
 """
@@ -73,6 +62,7 @@ function plotSmithData!(smith::SmithChart, network::T,parameter::Tuple{Int,Int};
                   axopts::PGFPlotsX.Options = @pgf({}),
                   opts::PGFPlotsX.Options = @pgf({}),
                   freqs::Union{StepRangeLen,Array, Nothing} = nothing,
+                  args::Tuple = (),
                   label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
   # Check to see if data is in bounds
   if parameter[1] > network.ports || parameter[1] < 1
@@ -81,8 +71,14 @@ function plotSmithData!(smith::SmithChart, network::T,parameter::Tuple{Int,Int};
   if parameter[2] > network.ports || parameter[2] < 1
     throw(DomainError(parameter[1], "Dimension 2 Out of Bounds"))
   end
-  # Collect the data we want
-  data = [s[parameter[1],parameter[2]] for s in network.s_params]
+  data = nothing
+  if T == DataNetwork
+    # Collect the data we want
+    data = [s[parameter[1],parameter[2]] for s in network.s_params]
+  elseif T == EquationNetwork
+    # Grab s-parameter data for each frequency
+    data = [network.eq(args...,freq=x,Z0=network.Z0) for x in freqs]
+  end
   # Convert to normalized input impedance
   data = [(1+datum)/(1-datum) for datum in data]
   # Split into coordinates
@@ -127,6 +123,7 @@ function plotRectangular(network::T,
                          axopts::PGFPlotsX.Options = @pgf({}),
                          opts::PGFPlotsX.Options = @pgf({}),
                          freqs::Union{StepRangeLen,Array, Nothing} = nothing,
+                         args::Tuple = (),
                          label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
   # Check that data is in bounds
   if parameter[1] > network.ports || parameter[1] < 1
@@ -135,6 +132,10 @@ function plotRectangular(network::T,
   if parameter[2] > network.ports || parameter[2] < 1
     throw(DomainError(parameter[1], "Dimension 2 Out of Bounds"))
   end
+
+  # Array of object for data
+  data = nothing
+
   if T == DataNetwork
     # Convert parameter
     if paramFormat == S
@@ -149,6 +150,22 @@ function plotRectangular(network::T,
     elseif paramFormat == H
       data = s2h(network.s_params, Z0 = network.Z0)
     end
+  elseif T == EquationNetwork
+    @assert freqs != nothing "freqs must be defined for plotting equation-driven networks."
+    # Grab s-parameter data for each frequency
+      data = [network.eq(args...,freq = x, Z0 = network.Z0) for x in freqs]
+    if paramFormat == S
+      # Do nothing
+    elseif paramFormat == Y
+      data = s2y(data, Z0 = network.Z0)
+    elseif paramFormat == Z
+      data = s2z(data, Z0 = network.Z0)
+    elseif paramFormat == G
+      data = s2g(data, Z0 = network.Z0)
+    elseif paramFormat == H
+      data = s2h(data, Z0 = network.Z0)
+    end
+  end
 
     # Collect the data we want
     data = [d[parameter[1],parameter[2]] for d in data]
@@ -159,7 +176,12 @@ function plotRectangular(network::T,
     # Find frequency multiplier from the last element
     multiplierString = ""
     multiplier = 1
-    freq = network.frequency[end]
+    freq = nothing
+    if T == DataNetwork
+      freq = network.frequency[end]
+    elseif T == EquationNetwork
+      freq = freqs[end]
+    end
     if freq < 1e3
       multiplierString = ""
       multiplier = 1
@@ -177,7 +199,12 @@ function plotRectangular(network::T,
       multiplier = 1e12
     end
 
-    frequency = network.frequency ./ multiplier
+    frequency = nothing
+    if T == DataNetwork
+      frequency = network.frequency ./ multiplier
+    elseif T == EquationNetwork
+      frequency = freqs ./ multiplier
+    end
 
     # Format with freq
     data = [(frequency[i],data[i]) for i = 1:length(data)]
@@ -192,9 +219,6 @@ function plotRectangular(network::T,
       p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none",opts...},Coordinates(data)))
       return p
     end
-  elseif T == EquationNetwork
-    # FIXME
-  end
 end
 
 function plotRectangular(network::T,
@@ -202,8 +226,14 @@ function plotRectangular(network::T,
                          axopts::PGFPlotsX.Options = @pgf({}),
                          opts::PGFPlotsX.Options = @pgf({}),
                          freqs::Union{StepRangeLen,Array, Nothing} = nothing,
+                         args::Tuple = (),
                          label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
-  if T == DataNetwork
+
+    if T == EquationNetwork
+      # Apply plotting function
+      network = equationToDataNetwork(network,args=args,freqs=freqs)
+    end
+
     # Apply plotting function
     data = pltFunc(network)
 
@@ -243,9 +273,6 @@ function plotRectangular(network::T,
     end
     # Draw on rectangular axis
     return p
-  elseif T == EquationNetwork
-    # FIXME
-  end
 end
 
 function plotRectangular!(ax::Axis,
@@ -254,6 +281,7 @@ function plotRectangular!(ax::Axis,
                           axopts::PGFPlotsX.Options = @pgf({}),
                           opts::PGFPlotsX.Options = @pgf({}),
                           freqs::Union{StepRangeLen,Array, Nothing} = nothing,
+                          args::Tuple = (),
                           label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
   if T == DataNetwork
     # Apply plotting function
@@ -313,6 +341,7 @@ function plotRectangular!(ax::Axis,
                           paramFormat::paramType = S;
                           opts::PGFPlotsX.Options = @pgf({}),
                           freqs::Union{StepRangeLen,Array, Nothing} = nothing,
+                          args::Tuple = (),
                           label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
   # Check that data is in bounds
   if parameter[1] > network.ports || parameter[1] < 1
@@ -321,6 +350,10 @@ function plotRectangular!(ax::Axis,
   if parameter[2] > network.ports || parameter[2] < 1
     throw(DomainError(parameter[1], "Dimension 2 Out of Bounds"))
   end
+
+  # Array of object for data
+  data = nothing
+
   if T == DataNetwork
     # Convert parameter
     if paramFormat == S
@@ -335,6 +368,22 @@ function plotRectangular!(ax::Axis,
     elseif paramFormat == H
       data = s2h(network.s_params, Z0 = network.Z0)
     end
+  elseif T == EquationNetwork
+    @assert freqs != nothing "freqs must be defined for plotting equation-driven networks."
+    # Grab s-parameter data for each frequency
+      data = [network.eq(args...,freq = x, Z0 = network.Z0) for x in freqs]
+    if paramFormat == S
+      # Do nothing
+    elseif paramFormat == Y
+      data = s2y(data, Z0 = network.Z0)
+    elseif paramFormat == Z
+      data = s2z(data, Z0 = network.Z0)
+    elseif paramFormat == G
+      data = s2g(data, Z0 = network.Z0)
+    elseif paramFormat == H
+      data = s2h(data, Z0 = network.Z0)
+    end
+  end
 
     # Collect the data we want
     data = [d[parameter[1],parameter[2]] for d in data]
@@ -345,7 +394,12 @@ function plotRectangular!(ax::Axis,
     # Find frequency multiplier from the last element
     multiplierString = ""
     multiplier = 1
-    freq = network.frequency[end]
+    freq = nothing
+    if T == DataNetwork
+      freq = network.frequency[end]
+    elseif T == EquationNetwork
+      freq = freqs[end]
+    end
     if freq < 1e3
       multiplierString = ""
       multiplier = 1
@@ -363,7 +417,13 @@ function plotRectangular!(ax::Axis,
       multiplier = 1e12
     end
 
-    frequency = network.frequency ./ multiplier
+    frequency = nothing
+    if T == DataNetwork
+      frequency = network.frequency ./ multiplier
+    elseif T == EquationNetwork
+      frequency = freqs ./ multiplier
+    end
+
 
     # Format with freq
     data = [(frequency[i],data[i]) for i = 1:length(data)]
@@ -380,9 +440,6 @@ function plotRectangular!(ax::Axis,
     end
     # Draw on rectangular axis
     return ax
-  elseif T == EquationNetwork
-    # FIXME
-  end
 end
 
 """

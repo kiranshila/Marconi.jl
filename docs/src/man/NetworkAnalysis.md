@@ -6,6 +6,7 @@ Depth = 3
 ```
 
 ## Converting Between Networks Representations
+Marconi provides functionality to convert between S,Z,Y, and T Parameters. See the library for more details.
 
 ## Interpolations
 To interpolate networks, one can just call `interpolate` with a network object and some
