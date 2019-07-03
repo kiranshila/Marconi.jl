@@ -16,8 +16,7 @@ makedocs(
             "man/RFAnalysis.md",
             "man/FileIO.md",
             "man/Plot.md",
-            "man/NetworkAnalysis.md",
-            "man/Calibration.md"],
+            "man/NetworkAnalysis.md"],
         "Library" => Any[
             "Public" =>"lib/Public.md"]])
 

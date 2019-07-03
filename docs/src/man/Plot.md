@@ -70,18 +70,18 @@ plotSmithData(bpf,(1,1),label="S(1,1)")
 ```
 
 #### Plotting with Equation-Driven Networks
-To plot with an `EquationNetwork`, we must also provide the frequencies to plot. This is done with the additional kwarg `freqs`
+To plot with an `EquationNetwork`, we must also provide the frequencies to plot. This is done with the additional kwarg `freqs`.
+We can also pass in arguments to our functions with the `args` kwarg.
 
 ```@example plot1
-function inductorAndResistor(;freq,Z0)
-    L = 1e-9
-    R = 30
+function inductorAndResistor(L=1e-9,R=30;freq,Z0)
     z = R + im*2*pi*freq*L
     return (z-Z0)/(z+Z0)
 end
 RL = EquationNetwork(1,50,inductorAndResistor)
 
-plotSmithData(RL,(1,1),freqs=range(100e6,stop=10e9,length=201))
+ax = plotSmithData(RL,(1,1),freqs=range(100e6,stop=10e9,length=201))
+plotSmithData!(ax,RL,(1,1),freqs=range(100e6,stop=10e9,length=201),args=(1e-9,50))
 ```
 
 ### Smith Chart Circles
@@ -136,7 +136,7 @@ To plot on a rectangular axis, we call the `plotRectangular` and `plotRectangula
 These operate similar in functionality to the smith chart plotting utilities as `plotRectangular` accepts a network object and the parameter to plot. Additionally,
 `plotRectangular` requires a function to apply to make 1-D data. This could be `dB` as supplied
 by this library, `real`, `imag`, or some other function. Finally, one could plot any network
-parameter, be it S, Z, Y, H, G, or ABCD.
+parameter, be it S, Z, Y, or T.
 
 Same as `plotSmithData`, `plotRectangular!` accepts an `opts` kwarg as well as an `axopts` kwag for `plotRectangular` as it is creating an axis object.
 
@@ -153,6 +153,20 @@ ax["ylabel"] = "dB"
 ax # hide
 ```
 
+#### Plotting with Equation-Driven Networks
+Plotting rectangular plots with equation-driven networks works much the same as plotting with smith charts.
+All of the other functionality for plotting is conserved as well of course.
+
+```@example example_rec
+function inductorAndResistor(L=1e-9,R=30;freq,Z0)
+    z = R + im*2*pi*freq*L
+    return (z-Z0)/(z+Z0)
+end
+RL = EquationNetwork(1,50,inductorAndResistor)
+
+ax = plotRectangular(RL,(1,1),freqs=range(100e6,stop=10e9,length=201))
+plotRectangular!(ax,RL,(1,1),freqs=range(100e6,stop=10e9,length=201),args=(1e-9,50))
+```
 
 ## Polar Plots
 

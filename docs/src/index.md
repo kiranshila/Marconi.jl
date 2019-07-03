@@ -13,8 +13,7 @@ Pages = [
     "man/RFAnalysis.md",
     "man/Plot.md",
     "man/FileIO.md",
-    "man/NetworkAnalysis.md",
-    "man/Calibration.md"
+    "man/NetworkAnalysis.md"
 ]
 Depth = 1
 ```
@@ -28,6 +27,7 @@ Pages = ["lib/Public.md"]
 # Coming Soon
 Depending on the progress of some other libraries, Marconi.jl would like to include
 in the near future
+* Calibration
 * Instrument control
 * Noise analysis
 * Filter builders
