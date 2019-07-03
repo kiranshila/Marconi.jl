@@ -30,12 +30,16 @@ function plotSmithData(network::T,parameter::Tuple{Int,Int};
   if parameter[2] > network.ports || parameter[2] < 1
     throw(DomainError(parameter[1], "Dimension 2 Out of Bounds"))
   end
+
+  data = nothing
+
   if T == DataNetwork
     # Collect the data we want
     data = [s[parameter[1],parameter[2]] for s in network.s_params]
   elseif T == EquationNetwork
     # Sample eq at each freq of interest
-    data = [network.eq(args...,freq=x,Z0=network.Z0) for x in freqs]
+    @assert freqs != nothing "Freqs must be defined for equation-driven networks"
+    data = [network.eq(args...,freq=x,Z0=network.Z0)[parameter[1],parameter[2]] for x in freqs]
   end
   # Convert to normalized input impedance
   data = [(1+datum)/(1-datum) for datum in data]

@@ -24,3 +24,33 @@ ax = plotRectangular(RL,(1,1),freqs=freqs,args=(1e-9,90))
 plotRectangular!(ax,RL,(1,1),freqs=freqs,args=(1e-9,10))
 
 ax = plotRectangular(RL,testK,args=(1e-9,30),freqs=Array(freqs))
+
+
+function filterNet(f_center=1e9,rolloff=1;freq,Z0)
+    gauss = f_center / (abs(freq-f_center)+f_center)*rolloff
+    return [sqrt(1-gauss^2)  gauss;gauss sqrt(1-gauss^2)]
+end
+
+filterNet(1e9,1,freq=10e9,Z0=50)
+
+filter = EquationNetwork(2,50,filterNet)
+
+ax = plotRectangular(filter,(2,1),freqs=range(500e5,stop=1.5e9,length=201))
+
+plotRectangular!(ax,filter,(1,1),freqs=range(500e5,stop=1.5e9,length=201))
+
+amp = readTouchstone("examples/Amp.s2p")
+
+net = cascade(amp,filter)
+
+plotRectangular!(ax,net,(1,1))
+
+plotRectangular!(ax,amp,(2,1))
+
+plotRectangular!(ax,filter,(2,1),freqs=Array(10e6:10e6:18e9))
+
+function batchShow(nets::Vararg{AbstractNetwork,N} where N)
+    for net in nets
+        println(net)
+    end
+end

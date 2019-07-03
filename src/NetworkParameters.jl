@@ -170,7 +170,7 @@ interpolate(network::DataNetwork,freqs::Union{UnitRange,StepRangeLen}) = interpo
 Returns a new `DataNetwork` that is the cascaded result of net1,net2,net3,...netN where the `nets` are
 2-Port `DataNetwork` objects. Optionally takes kwarg `numpoints` for how many points in the result.
 """
-function cascade(networks::T...;numpoints = 401) where {T <: AbstractNetwork}
+function cascade(networks::DataNetwork...;numpoints = 401)
     @assert length(networks) >= 2 "Must have at least two networks to cascade."
     for network in networks
         @assert network.ports == 2 "Cascade is for 2-Port networks, use `wire` for n-port"
@@ -189,6 +189,83 @@ function cascade(networks::T...;numpoints = 401) where {T <: AbstractNetwork}
 
     # Cascade
     cascade_result = [*([t_params[j][i] for j in 1:length(networks)] ...) for i in 1:numpoints]
+
+    # Create new network and return
+    return DataNetwork(2,50,Array(f_range),[t2s(t) for t in cascade_result])
+end
+
+"""
+    cascade(net1,net2,net3,...,netN)
+
+Returns a new `DataNetwork` that is the cascaded result of net1,net2,net3,...netN where the `nets` are a mixture of
+2-Port `DataNetwork` objects and 2-Port `EquaionNetwork` object.
+Optionally takes kwarg `numpoints` for how many points in the result.
+
+See the docs for details of dealing with equation-driven networks
+"""
+function cascade(networks::AbstractNetwork...;numpoints = 401,args::Array = [()])
+
+    @assert length(networks) >= 2 "Must have at least two networks to cascade."
+    for network in networks
+        @assert network.ports == 2 "Cascade is for 2-Port networks, use `wire` for n-port"
+        @assert typeof(network) <: AbstractNetwork "Inputs must be networks"
+    end
+
+    # Find frequency range of result
+    f_low = max([network.frequency[1] for network in networks if typeof(network) == DataNetwork] ...)
+    f_high = min([network.frequency[end] for network in networks if typeof(network) == DataNetwork] ...)
+    f_range = range(f_low,stop=f_high,length=numpoints)
+
+    # Reinterpolate all the newtorks to match
+    interp_networks = []
+    counter = 1
+    for network in networks
+        if typeof(network) == DataNetwork
+            push!(interp_networks,interpolate(network,f_range))
+        elseif typeof(network) == EquationNetwork
+            # Convert to data network
+            push!(interp_networks,equationToDataNetwork(network,args=args[counter],freqs=f_range))
+        end
+    end
+
+    # Convert to T networks
+    t_params = [[s2t(params) for params in network.s_params] for network in interp_networks]
+
+    # Cascade
+    cascade_result = [*([t_params[j][i] for j in 1:length(interp_networks)] ...) for i in 1:numpoints]
+
+    # Create new network and return
+    return DataNetwork(2,50,Array(f_range),[t2s(t) for t in cascade_result])
+end
+
+
+# FIXME FIXME FIXME FIXME
+
+"""
+    cascade(net1,net2,net3,...,netN)
+
+Returns a new `EquationNetwork` that is the cascaded result of net1,net2,net3,...netN where the `nets` are
+2-Port `EquationNetwork` objects.
+
+See the docs for details of dealing with equation-driven networks
+"""
+function cascade(networks::EquationNetwork...)
+    @assert length(networks) >= 2 "Must have at least two networks to cascade."
+    for network in networks
+        @assert network.ports == 2 "Cascade is for 2-Port networks, use `wire` for n-port"
+    end
+
+    # Gather all equations
+    eq_list = [network.eq for network in networks]
+
+    # Convert all the eqatuations to t-parameters
+    eq_list = [s2t ∘ eq for eq in eq_list]
+
+    # Convert to T networks
+    t_params = [[s2t(params) for params in network.s_params] for network in interp_networks]
+
+    # Cascade
+    cascade_result = [*([t_params[j][i] for j in 1:length(interp_networks)] ...) for i in 1:numpoints]
 
     # Create new network and return
     return DataNetwork(2,50,Array(f_range),[t2s(t) for t in cascade_result])

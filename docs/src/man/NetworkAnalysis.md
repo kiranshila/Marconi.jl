@@ -66,3 +66,27 @@ plotRectangular!(ax,system,(2,1))
 ```
 
 ### Cascading Data Networks with Equation-Driven Networks
+Working with both data networks and equation driven networks can be tricky as mixing the two will always product a `DataNetwork`
+
+Cascading any amount of equation-driven networks with a data network will always return a `DataNetwork`. Just as before,
+the frequency of the result is the range that overlaps all the data networks or in the case of only one data network, the frequency range
+of that network.
+
+```@example cascade
+function sillyFilter(f_center=1e9,rolloff=1;freq,Z0)
+    s21 = f_center / (abs(freq-f_center)+f_center)*rolloff
+    return [sqrt(1-gauss^2)  s21;s21 sqrt(1-gauss^2)]
+end
+
+filter = EquationNetwork(2,50,sillyFilter)
+
+amp = readTouchstone("Amp.s2p")
+
+net = cascade(amp,filter)
+
+ax = plotRectangular(net,(2,1),label="Cascaded S(2,1)")
+plotRectangular!(ax,amp,(2,1),label="Amplifier S(2,1)")
+plotRectangular!(ax,filter,(2,1),freqs=net.frequency,label="Filter S(2,1)")
+ax["ylabel"] = "dB"
+ax # hide
+```
