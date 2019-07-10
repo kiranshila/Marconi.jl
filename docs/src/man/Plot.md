@@ -179,7 +179,3 @@ RL = EquationNetwork(1,50,inductorAndResistor)
 ax = plotRectangular(RL,(1,1),freqs=range(100e6,stop=10e9,length=201))
 plotRectangular!(ax,RL,(1,1),freqs=range(100e6,stop=10e9,length=201),args=(1e-9,50))
 ```
-
-## Polar Plots
-
-## Groups of Plots
