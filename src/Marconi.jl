@@ -17,6 +17,9 @@ export EquationNetwork
 export testDelta
 export testMagDelta
 export testK
+export testMUG
+export testMSG
+export testMAG
 export ∠
 export inputZ
 export Γ
@@ -356,6 +359,37 @@ function testK(network::T;pos = 0) where {T <: DataNetwork}
     return (1 - abs(network.s_params[pos][1,1])^2 - abs(network.s_params[pos][2,2])^2 + testMagDelta(network,pos=pos)^2) /
            (2*abs(network.s_params[pos][1,2])*abs(network.s_params[pos][2,1]))
   end
+end
+
+"""
+    testMUG(network)
+
+Returns a vector of the maximum unilateral gain of a network.
+"""
+function testMUG(network::DataNetwork)
+  @assert network.ports == 2 "Gain calculations must be performed on two port networks"
+  [abs(s[2,1])^2 / ( (1-abs(s[1,1])^2) * (1-abs(s[2,2])^2) ) for s in network.s_params]
+end
+
+"""
+    testMSG(network)
+
+Returns a vector of the maximum stable gain of a network.
+"""
+function testMSG(network::DataNetwork)
+  @assert network.ports == 2 "Gain calculations must be performed on two port networks"
+  [abs(s[2,1]) / abs(s[1,2]) for s in network.s_params]
+end
+
+"""
+    testMAG(network)
+
+Returns a vector of the maximum available gain of a network.
+"""
+function testMAG(network::DataNetwork)
+  @assert network.ports == 2 "Gain calculations must be performed on two port networks"
+  K = testK(network)
+  [K[i] > 1 ? (1/(K[i]+sqrt(K[i]^2-1))) * (abs(network.s_params[i][2,1])/abs(network.s_params[i][1,2])) : NaN for i in 1:length(network.frequency)]
 end
 
 """

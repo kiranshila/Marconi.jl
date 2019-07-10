@@ -189,11 +189,43 @@ plotVSWR!(sc,1.92,opts = circleStyle,label="VSWR = 1.92")
 ```
 
 ## Gain Equations
-### Operating Power Gain
-### Transducer Gain
-### Unilateral Transducer Gain
-### Available Gain
-### Gain Circles
+These functions provide calculations to asses the gain performance of active microwave circuits
+### Maximum Unilateral Gain
+Making the unilateral assumption, S12 = 0, we can calculate MUG as
+```math
+MUG = \frac{ |S_{21}|^2 }{ (1 - |S_{11}|^2)(1 - |S_{22}|^2) }
+```
+```@example example_stab
+jfet = readTouchstone("CE3520K3.s2p")
+plotRectangular(jfet,testMUG,dB,label="MUG")
+```
+### Maximum Stable Gain
+The maximum gain out of a potentially unstable device
+```math
+MSG = \frac{ |S_{21}| }{ |S_{12}| }
+```
+```@example example_stab
+jfet = readTouchstone("CE3520K3.s2p")
+plotRectangular(jfet,testMSG,dB,label="MSG")
+```
+### Maximum Available Gain
+Otherwise known as GMAX, MAG is the maximum gain from a stable network.
+This formula comes from [Microwaves 101](https://www.microwaves101.com/encyclopedias/stability-factor) -
+a modification from the textbook equation such that MAG behaves well for high K devices.
+```math
+MAG = \frac{ |S_{21}| }{ |S_{12}| } * \frac{1}{K+\sqrt{K^2-1}}
+```
+```@example example_stab
+jfet = readTouchstone("CE3520K3.s2p")
+plotRectangular(jfet,testMAG,dB,label="MAG")
+```
+This makes sense as looking at the K plot from before, the device is only unconditionally stable around 14 GHz and above 25 GHz.
+
+Just to compare this to the S21 parameter:
+```@example example_stab
+ax = plotRectangular(jfet,testMAG,dB,label="MAG")
+plotRectangular!(ax,jfet,(2,1),label="S(2,1)")
+```
 
 ## Transmission Line Calculations
 Marconi provides some basic calculations for transmission lines:

@@ -79,3 +79,7 @@ amp = readTouchstone("examples/Amp.s2p")
 writeTouchstone(amp,"examples/Amp_Test.s2p")
 amp_test = readTouchstone("examples/Amp_Test.s2p")
 amp_test == amp
+
+
+jfet = readTouchstone("examples/CE3520K3.s2p")
+plotRectangular(jfet,testMUG,label="MUG")

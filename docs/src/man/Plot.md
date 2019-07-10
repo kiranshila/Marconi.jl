@@ -135,11 +135,9 @@ sc = SmithChart(axis_style)
 To plot on a rectangular axis, we call the `plotRectangular` and `plotRectangular!` functions.
 
 These operate similar in functionality to the smith chart plotting utilities as `plotRectangular` accepts a network object and the parameter to plot. Additionally,
-`plotRectangular` requires a function to apply to make 1-D data. This could be `dB` as supplied
-by this library, `real`, `imag`, or some other function. Finally, one could plot any network
-parameter, be it S, Z, Y, or T.
+`plotRectangular` requires a function to apply to make 1-D data. This could be `dB` or `dB20` for `20log10` as supplied by this library, `real`, `imag`, or some other function. Finally, one could plot any network parameter, be it S, Z, Y, or T.
 
-Same as `plotSmithData`, `plotRectangular!` accepts an `opts` kwarg as well as an `axopts` kwag for `plotRectangular` as it is creating an axis object.
+Same as `plotSmithData`, `plotRectangular!` accepts an `opts` kwarg as well as an `axopts` kwarg for `plotRectangular` as it is creating an axis object.
 
 ```@setup example_rec
 using Marconi
@@ -150,6 +148,19 @@ using PGFPlotsX
 amp = readTouchstone("Amp.s2p")
 ax = plotRectangular(amp,(1,1),dB,label="S(1,1)")
 plotRectangular!(ax,amp,(2,1),dB,label="S(2,1)")
+ax["ylabel"] = "dB"
+ax # hide
+```
+
+Also, instead of supplying a tuple for the parameter to plot, one can supply a function to reduce a network
+to an array. There are several in this library for calculating stability, gain, and otherwise.
+```@example example_rec
+plotRectangular(amp,testK,label="K Stabilty")
+```
+
+To apply another function, such as `dB`, `real`, or otherwise; supply that function after the network function.
+```@example example_rec
+ax = plotRectangular(amp,testMSG,dB,label="MSG")
 ax["ylabel"] = "dB"
 ax # hide
 ```
