@@ -21,6 +21,8 @@ Reading these files into a `Network` object is straightforward
 ```@eval
 cd("../../..")
 cp("examples/BPF.s2p","docs/build/man/BPF.s2p",force = true)
+cp("examples/Amp.s2p","docs/build/man/Amp.s2p", force = true) # hide
+cp("examples/Short.s1p","docs/build/man/Short.s1p", force = true) # hide
 nothing
 ```
 

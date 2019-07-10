@@ -75,7 +75,7 @@ of that network.
 ```@example cascade
 function sillyFilter(f_center=1e9,rolloff=1;freq,Z0)
     s21 = f_center / (abs(freq-f_center)+f_center)*rolloff
-    return [sqrt(1-gauss^2)  s21;s21 sqrt(1-gauss^2)]
+    return [sqrt(1-s21^2)  s21;s21 sqrt(1-s21^2)]
 end
 
 filter = EquationNetwork(2,50,sillyFilter)
