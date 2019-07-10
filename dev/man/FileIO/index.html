@@ -3,9 +3,7 @@
  Z0 = 50.0
  Frequency = 10.0 MHz to 5.0 GHz
  Points = 236
-</code></pre><h2><a class="nav-anchor" id="Writing-Touchstone-Files-1" href="#Writing-Touchstone-Files-1">Writing Touchstone Files</a></h2><p>To save your work from Marconi, one can either work directly with the <code>frequency</code> and <code>s_params</code> from a <code>DataNetwork</code> or save directly to a Touchstone file with <code>writeTouchstone</code></p><pre><code class="language-">using Marconi # hide
-amp = readTouchstone(&quot;Amp.s2p&quot;)
+</code></pre><h2><a class="nav-anchor" id="Writing-Touchstone-Files-1" href="#Writing-Touchstone-Files-1">Writing Touchstone Files</a></h2><p>To save your work from Marconi, one can either work directly with the <code>frequency</code> and <code>s_params</code> from a <code>DataNetwork</code> or save directly to a Touchstone file with <code>writeTouchstone</code></p><pre><code class="language-julia">amp = readTouchstone(&quot;Amp.s2p&quot;)
 bpf = readTouchstone(&quot;BPF.s2p&quot;)
 system = cascade(bpf,amp)
-writeTouchstone(system,&quot;Cascade.s2p&quot;)
-rm(&quot;Cascade.s2p&quot;) # hide</code></pre><p>As of this version, Marconi will write the touchstone file in Hz with S-Parameters in Real/Imaginary format as every software should in theory support all versions of the format. Format specifiers could come in a future release.</p><footer><hr/><a class="previous" href="../RFAnalysis/"><span class="direction">Previous</span><span class="title">RF Analysis</span></a><a class="next" href="../Plot/"><span class="direction">Next</span><span class="title">Plotting</span></a></footer></article></body></html>
+writeTouchstone(system,&quot;Cascade.s2p&quot;)</code></pre><p>As of this version, Marconi will write the touchstone file in Hz with S-Parameters in Real/Imaginary format as every software should in theory support all versions of the format. Format specifiers could come in a future release.</p><footer><hr/><a class="previous" href="../RFAnalysis/"><span class="direction">Previous</span><span class="title">RF Analysis</span></a><a class="next" href="../Plot/"><span class="direction">Next</span><span class="title">Plotting</span></a></footer></article></body></html>
