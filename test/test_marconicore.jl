@@ -25,6 +25,6 @@
     amp = readTouchstone("../examples/Amp.s2p")
     writeTouchstone(amp,"../examples/Amp_Test.s2p")
     amp_test = readTouchstone("../examples/Amp_Test.s2p")
-    rm("../examples/Amp_Test.s1p")
+    rm("../examples/Amp_Test.s2p")
     @test amp_test == amp
 end
