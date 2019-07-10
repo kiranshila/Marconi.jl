@@ -28,3 +28,20 @@ nothing
 using Marconi # hide
 readTouchstone("BPF.s2p")
 ```
+
+## Writing Touchstone Files
+To save your work from Marconi, one can either work directly with the `frequency` and `s_params` from
+a `DataNetwork` or save directly to a Touchstone file with `writeTouchstone`
+
+```@example
+using Marconi # hide
+amp = readTouchstone("Amp.s2p")
+bpf = readTouchstone("BPF.s2p")
+system = cascade(bpf,amp)
+writeTouchstone(system,"Cascade.s2p")
+rm("Cascade.s2p") # hide
+```
+
+As of this version, Marconi will write the touchstone file in Hz with S-Parameters in Real/Imaginary
+format as every software should in theory support all versions of the format. Format specifiers could
+come in a future release.

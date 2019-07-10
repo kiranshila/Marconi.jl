@@ -7,6 +7,19 @@ function inductorAndResistor(L=1e-9,R=50;freq,Z0)
     return (z-Z0)/(z+Z0)
 end
 
+
+short = readTouchstone("examples/Short.s1p")
+
+writeTouchstone(short,"short.s1p")
+
+ax = plotRectangular(bpf,(1,1))
+
+plotRectangular!(ax,bpf,(2,1))
+
+ax["width"] = "20 cm"
+
+ax
+
 freqs = 1e9:10e6:10e9
 
 RL = EquationNetwork(1,50,inductorAndResistor)
@@ -35,7 +48,7 @@ filterNet(1e9,1,freq=10e9,Z0=50)
 
 filter = EquationNetwork(2,50,filterNet)
 
-ax = plotRectangular(filter,(2,1),freqs=range(500e5,stop=1.5e9,length=201))
+ax = plotRectangular(filter,(2,1),freqs=range(500e5,stop=1.5e9,length=201),args=(1e9,1))
 
 plotRectangular!(ax,filter,(1,1),freqs=range(500e5,stop=1.5e9,length=201))
 
@@ -54,3 +67,15 @@ function batchShow(nets::Vararg{AbstractNetwork,N} where N)
         println(net)
     end
 end
+
+
+
+short = readTouchstone("examples/Short.s1p")
+writeTouchstone(short,"examples/Short_Test.s1p")
+short_test = readTouchstone("examples/Short_Test.s1p")
+short_test == short
+
+amp = readTouchstone("examples/Amp.s2p")
+writeTouchstone(amp,"examples/Amp_Test.s2p")
+amp_test = readTouchstone("examples/Amp_Test.s2p")
+amp_test == amp

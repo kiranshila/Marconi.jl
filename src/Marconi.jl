@@ -1,12 +1,14 @@
 module Marconi
 
 import Base.show
+import Base.==
 using LinearAlgebra
 using Interpolations
 using Printf
 
 # Package exports
 export readTouchstone
+export writeTouchstone
 export isPassive
 export isReciprocal
 export AbstractNetwork
@@ -40,6 +42,13 @@ function DataNetwork(ports::Int,Z0::Number,frequency::Array{A,1},s_params::Array
   # Hacky fix as 1x1 array still needs to be Array{T,2}
   s_params = [hcat(param) for param in s_params]
   DataNetwork(ports,Z0,frequency,s_params)
+end
+
+function ==(a::DataNetwork,b::DataNetwork)
+  a.ports == b.ports &&
+  a.Z0 == b.Z0 &&
+  a.frequency == b.frequency &&
+  a.s_params == b.s_params
 end
 
 """
@@ -238,6 +247,44 @@ function processTouchstoneLine(line::String,freqExp::Real,paramT::paramType,para
   end # TODO H and G Parameters
 
   return frequency,ports,params
+end
+
+"""
+    writeTouchstone(network,filename)
+
+Writes a Touchstone file from a Marconi network.
+"""
+function writeTouchstone(network::AbstractNetwork,filename::String)
+  body = "! Generated from Marconi.jl"
+  body *= "\n# Hz S RI R 50\n"
+  if network.ports == 1
+    for i in 1:length(network.frequency)
+      body *= "$(network.frequency[i])\t"
+      body *= "$(real(network.s_params[i][1,1]))\t"
+      body *= "$(imag(network.s_params[i][1,1]))\n"
+    end
+  elseif network.ports == 2
+    for i in 1:length(network.frequency)
+      # In the order S11, S21, S12, S22
+      body *= "$(network.frequency[i])\t"
+      body *= "$(real(network.s_params[i][1,1]))\t"
+      body *= "$(imag(network.s_params[i][1,1]))\t"
+
+      body *= "$(real(network.s_params[i][2,1]))\t"
+      body *= "$(imag(network.s_params[i][2,1]))\t"
+
+      body *= "$(real(network.s_params[i][1,2]))\t"
+      body *= "$(imag(network.s_params[i][1,2]))\t"
+
+      body *= "$(real(network.s_params[i][2,2]))\t"
+      body *= "$(imag(network.s_params[i][2,2]))\n"
+    end
+  elseif network.ports >= 2
+
+  end
+  io = open(filename, "w")
+  print(io, body)
+  close(io)
 end
 
 
