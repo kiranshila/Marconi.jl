@@ -16,5 +16,5 @@
 *"Walks like Python, Runs like C" for open source RF/Microwave engineering*
 
 ```julia
-julia> Pkg.add("github.com/kiranshila/Marconi.jl")
+julia> Pkg.add("Marconi")
 ```
