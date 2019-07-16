@@ -40,12 +40,12 @@ in the near future
 # Using Marconi.jl
 To use Marconi.jl simply use the Pkg REPL
 ```julia
-] add https://github.com/kiranshila/Marconi.jl
+] add Marconi
 ```
 or from Pkg itself
 ```julia
 using(Pkg)
-Pkg.add("https://github.com/kiranshila/Marconi.jl")
+Pkg.add("Marconi")
 ```
 
 ## In Publications
