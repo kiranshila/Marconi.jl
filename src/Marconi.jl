@@ -157,8 +157,8 @@ end
 function Base.show(io::IO,pattern::RadiationPattern)
   ϕ = Array(pattern.ϕ); θ = Array(pattern.θ)
   println(io,"$(length(pattern.pattern))-Element Radiation Pattern")
-  println(io," Φ - $(ϕ[0])deg to $(ϕ[end])deg in $(ϕ[1]-ϕ[0])deg steps")
-  println(io," θ - $(θ[0])deg to $(θ[end])deg in $(θ[1]-θ[0])deg steps")
+  println(io," Φ: $(ϕ[1]) - $(ϕ[end]) deg in $(ϕ[2]-ϕ[1]) deg steps")
+  println(io," θ: $(θ[1]) - $(θ[end]) deg in $(θ[2]-θ[1]) deg steps")
 end
 
 function prettyPrintFrequency(freq::T) where {T <: Real}
