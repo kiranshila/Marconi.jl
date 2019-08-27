@@ -154,6 +154,13 @@ function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
   end
 end
 
+function Base.show(io::IO,pattern::RadiationPattern)
+  ϕ = Array(pattern.ϕ); θ = Array(pattern.θ)
+  println(io,"$(length(pattern.pattern))-Element Radiation Pattern")
+  println(io," Φ - $(ϕ[0])deg to $(ϕ[end])deg in $(ϕ[1]-ϕ[0])deg steps")
+  println(io," θ - $(θ[0])deg to $(θ[end])deg in $(θ[1]-θ[0])deg steps")
+end
+
 function prettyPrintFrequency(freq::T) where {T <: Real}
   multiplierString = ""
   multiplier = 1
