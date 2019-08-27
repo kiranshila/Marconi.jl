@@ -5,6 +5,7 @@ import Base.==
 using LinearAlgebra
 using Interpolations
 using Printf
+using CSV
 
 # Package exports
 export readTouchstone
@@ -27,6 +28,10 @@ export interpolate
 export complex2angleString
 export complex2angle
 export equationToDataNetwork
+export readHFSSPattern
+export RadiationPattern
+
+include("Constants.jl")
 
 abstract type AbstractNetwork end
 
@@ -82,6 +87,58 @@ or range `freqs`.
 """
 function equationToDataNetwork(network::EquationNetwork;args::Tuple=(),freqs::Union{StepRangeLen,Array})
   DataNetwork(network.ports,network.Z0,Array(freqs),[network.eq(args...,Z0=network.Z0,freq = f) for f in freqs])
+end
+
+"""
+    RadiationPattern
+Stores a 3D antenna radiation pattern in spherical coordinates.
+Φ and Θ are in degrees, pattern is in dBi
+"""
+struct RadiationPattern
+    ϕ::Union{AbstractRange,Array}
+    θ::Union{AbstractRange,Array}
+    pattern::Array{Real,2}
+end
+
+"""
+    readHFSSPattern("myAntenna.csv")
+Reads the exported fields from HFSS into a Marconi `RadiationPattern` object.
+"""
+function readHFSSPattern(filename::String)
+    # Read Pattern
+    patternData = CSV.read(filename) |> Matrix
+
+    # Determine sampled space
+    ϕ_min = Inf
+    ϕ_max = -Inf
+    θ_min = Inf
+    θ_max = -Inf
+
+    for i in 1:size(patternData)[1], j in 1:size(patternData)[2]-1
+        # Check column 1 for phi, 2 for theta
+        if j == 1
+            if patternData[i,j] > ϕ_max
+                ϕ_max = patternData[i,j]
+            elseif patternData[i,j] < ϕ_min
+                ϕ_min = patternData[i,j]
+            end
+        elseif j == 2
+            if patternData[i,j] > θ_max
+                θ_max = patternData[i,j]
+            elseif patternData[i,j] < θ_min
+                θ_min = patternData[i,j]
+            end
+        end
+    end
+
+    # Determine step size
+    ϕ_step = patternData[2,1] - patternData[1,1]
+    ϕ = ϕ_min:ϕ_step:ϕ_max
+    θ_step = patternData[length(ϕ)+1,2] - patternData[1,2]
+    θ = θ_min:θ_step:θ_max
+
+    # Create pattern
+    RadiationPattern(ϕ,θ,reshape(patternData[:,3],(length(ϕ),length(θ))))
 end
 
 function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
@@ -145,7 +202,7 @@ function readTouchstone(filename::String)
   open(filename) do f
     while !eof(f)
       line = readline(f)
-      if line[1] == '!' # Ignore comment lines
+      if line == "" || line[1] == '!' # Ignore comment lines and empty lines
         continue
       elseif line[1] == '#' # Parse option line
         # Option line contains [HZ/KHZ/MHZ/GHZ] [S/Y/Z/G/H] [MA/DB/RI] [R n]
@@ -438,4 +495,5 @@ end
 # to the types defined in this file
 include("NetworkParameters.jl")
 include("MarconiPlots.jl")
+#include("Metamaterials.jl")
 end # Module End
