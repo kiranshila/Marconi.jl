@@ -13,6 +13,7 @@ export writeTouchstone
 export isPassive
 export isReciprocal
 export AbstractNetwork
+export AbstractRadiatonPattern
 export DataNetwork
 export EquationNetwork
 export testDelta
@@ -34,6 +35,7 @@ export RadiationPattern
 include("Constants.jl")
 
 abstract type AbstractNetwork end
+abstract type AbstractRadiatonPattern end
 
 """
 The base Network type for representing n-port linear networks with characteristic impedance Z0.
@@ -94,10 +96,20 @@ end
 Stores a 3D antenna radiation pattern in spherical coordinates.
 Φ and Θ are in degrees, pattern is in dBi
 """
-struct RadiationPattern
+mutable struct RadiationPattern <: AbstractRadiatonPattern
     ϕ::Union{AbstractRange,Array}
     θ::Union{AbstractRange,Array}
     pattern::Array{Real,2}
+end
+
+"""
+    ArrayFactor
+Stores the array factor due to N isotropic radiators located at `locations` with
+phasor excitations `excitations`
+"""
+mutable struct ArrayFactor <: AbstractRadiationPattern
+  locations::Array{Array{Real}}
+  excitations::Array{Complex}
 end
 
 """
