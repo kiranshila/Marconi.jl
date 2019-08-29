@@ -33,6 +33,7 @@ export equationToDataNetwork
 export readHFSSPattern
 export RadiationPattern
 export ArrayFactor
+export generateRectangularAF
 
 include("Constants.jl")
 
