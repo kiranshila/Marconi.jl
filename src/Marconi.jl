@@ -2,6 +2,7 @@ module Marconi
 
 import Base.show
 import Base.==
+import Base.findmax
 using LinearAlgebra
 using Interpolations
 using Printf
@@ -31,6 +32,7 @@ export complex2angle
 export equationToDataNetwork
 export readHFSSPattern
 export RadiationPattern
+export ArrayFactor
 
 include("Constants.jl")
 
@@ -105,15 +107,68 @@ end
 """
     ArrayFactor
 Stores the array factor due to N isotropic radiators located at `locations` with
-phasor excitations `excitations`
+phasor excitations `excitations`. Calling an `ArrayFactor` object with the arguments
+ϕ,θ,and frequency will return in dB the value of the AF at that location in spherical
+coordinates.
 """
-mutable struct ArrayFactor <: AbstractRadiationPattern
-  locations::Array{Array{Real}}
+mutable struct ArrayFactor <: AbstractRadiatonPattern
+  locations::Array{Tuple{Real,Real,Real}}
   excitations::Array{Complex}
 end
 
+function (af::ArrayFactor)(ϕ,θ,freq)
+    # Construct wave vector
+    λ = c₀/freq
+    k = (2*π)/(λ) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
+    # Constuct steering vector
+    v = [exp(-1im*k⋅r) for r in af.locations]
+    # Create array factor
+    return 10*log10(abs(transpose(af.excitations)*v))
+end
+
 """
-    readHFSSPattern("myAntenna.csv")
+        generateRectangularAF(Nx,Ny,Spacingx,Spacingy,ϕ,θ,freq)
+Creates an `ArrayFactor` object from arectangular array that is `Nx` X `Ny`
+big with spacing `Spacingx` and `Spacingy`. The excitations are phased such that
+the main beam is in the `ϕ`, `θ`, direction at frequency `freq`.
+"""
+function generateRectangularAF(Nx,Ny,Spacingx,Spacingy,ϕ,θ,freq)
+    # Create Locations
+    Locations = []
+    # 1D
+    if Nx == 0
+        # FIXME
+    elseif Ny == 0
+        # FIXME
+    else
+        # 2D
+        for i in 1:Nx, j in 1:Ny
+            push!(Locations,((i-1)*Spacingx,(j-1)*Spacingy,0))
+        end
+    end
+    R_Hat = [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
+    # Calculate phases
+    ω = 2*π*freq
+    k = ω/c₀
+    Phases = zeros(length(Locations))
+    for (i,position) in enumerate(Locations)
+        Phases[i] = -k*R_Hat'*[position...]*(180/π) % 360
+        # Fix weird phases
+        if Phases[i] < 0
+            Phases[i] += 360 # Fix negative angles
+        end
+        if Phases[i] / 360 > 0.99999
+            Phases[i] = 0 # Fix numbers close to 360
+        end
+        if Phases[i] < 1e-10
+            Phases[i] = 0 # Fix some precision errors
+        end
+    end
+    ArrayFactor(Locations,[∠(1,angle) for angle in Phases])
+end
+
+"""
+        readHFSSPattern("myAntenna.csv")
 Reads the exported fields from HFSS into a Marconi `RadiationPattern` object.
 """
 function readHFSSPattern(filename::String)
@@ -151,6 +206,12 @@ function readHFSSPattern(filename::String)
 
     # Create pattern
     RadiationPattern(ϕ,θ,reshape(patternData[:,3],(length(ϕ),length(θ))))
+end
+
+function findmax(pattern::RadiationPattern)
+    val,location = findmax(pattern.pattern)
+    i = location[1]; j = location[2]
+    return val,Array(pattern.ϕ)[i],Array(pattern.ϕ)[j]
 end
 
 function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
