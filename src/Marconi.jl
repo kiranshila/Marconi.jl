@@ -138,9 +138,9 @@ function generateRectangularAF(Nx,Ny,Spacingx,Spacingy,ϕ,θ,freq)
     Locations = []
     # 1D
     if Nx == 0
-        # FIXME
+        error("Needs at least one component in x")
     elseif Ny == 0
-        # FIXME
+        error("Needs at least one component in y")
     else
         # 2D
         for i in 1:Nx, j in 1:Ny
