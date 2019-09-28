@@ -2,6 +2,7 @@ module Marconi
 
 import Base.show
 import Base.==
+import Base.+
 import Base.findmax
 using LinearAlgebra
 using Interpolations
@@ -128,9 +129,15 @@ function (af::ArrayFactor)(ϕ,θ,freq)
     return 10*log10(abs(transpose(af.excitations)*v))
 end
 
+function +(pattern_1::RadiationPattern,pattern_2::RadiationPattern)
+    @assert pattern_1.ϕ == pattern_2.ϕ "Phi space must be identical"
+    @assert pattern_1.θ == pattern_2.θ "Theta space must be identical"
+    return RadiationPattern(pattern_1.ϕ,pattern_1.θ,pattern_1.pattern + pattern_2.pattern)
+end
+
 function applyAF(pattern,AF,freq)
     return RadiationPattern(pattern.ϕ,pattern.θ,
-        [AF(phi,theta,freq) for phi in pattern.ϕ, theta in pattern.θ])
+        [AF(phi,theta,freq) for phi in pattern.ϕ, theta in pattern.θ]) + pattern
 end
 
 """
