@@ -129,11 +129,8 @@ function (af::ArrayFactor)(ϕ,θ,freq)
 end
 
 function applyAF(pattern,AF,freq)
-    arrayedPattern = RadiationPattern(pattern.ϕ,pattern.θ,zeros(Float64,(length(pattern.ϕ),length(pattern.θ))))
-    for (i,ϕ) in enumerate(pattern.ϕ), (j,θ) in enumerate(pattern.θ)
-        arrayedPattern = pattern.pattern[i,j] + AF(ϕ,θ,freq)
-    end
-    return arrayedPattern
+    return RadiationPattern(pattern.ϕ,pattern.θ,
+        [AF(phi,theta,freq) for phi in pattern.ϕ, theta in pattern.θ])
 end
 
 """
