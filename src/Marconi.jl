@@ -34,6 +34,7 @@ export readHFSSPattern
 export RadiationPattern
 export ArrayFactor
 export generateRectangularAF
+export applyAF
 
 include("Constants.jl")
 
@@ -125,6 +126,14 @@ function (af::ArrayFactor)(ϕ,θ,freq)
     v = [exp(-1im*k⋅r) for r in af.locations]
     # Create array factor
     return 10*log10(abs(transpose(af.excitations)*v))
+end
+
+function applyAF(pattern,AF,freq)
+    arrayedPattern = RadiationPattern(pattern.ϕ,pattern.θ,zeros(Float64,(length(pattern.ϕ),length(pattern.θ))))
+    for (i,ϕ) in enumerate(pattern.ϕ), (j,θ) in enumerate(pattern.θ)
+        arrayedPattern = pattern.pattern[i,j] + AF(ϕ,θ,freq)
+    end
+    return arrayedPattern
 end
 
 """
