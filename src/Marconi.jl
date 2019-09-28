@@ -218,7 +218,7 @@ end
 function findmax(pattern::RadiationPattern)
     val,location = findmax(pattern.pattern)
     i = location[1]; j = location[2]
-    return val,Array(pattern.ϕ)[i],Array(pattern.ϕ)[j]
+    return val,Array(pattern.ϕ)[i],Array(pattern.θ)[j]
 end
 
 function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
