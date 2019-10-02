@@ -4,6 +4,7 @@ import Base.show
 import Base.==
 import Base.+
 import Base.findmax
+import Base.findmin
 using LinearAlgebra
 using Interpolations
 using Printf
@@ -240,6 +241,12 @@ end
 
 function findmax(pattern::RadiationPattern)
     val,location = findmax(pattern.pattern)
+    i = location[1]; j = location[2]
+    return val,Array(pattern.ϕ)[i],Array(pattern.θ)[j]
+end
+
+function findmin(pattern::RadiationPattern)
+    val,location = findmin(pattern.pattern)
     i = location[1]; j = location[2]
     return val,Array(pattern.ϕ)[i],Array(pattern.θ)[j]
 end
@@ -605,5 +612,6 @@ end
 # to the types defined in this file
 include("NetworkParameters.jl")
 include("MarconiPlots.jl")
+include("Antennas.jl")
 #include("Metamaterials.jl")
 end # Module End
