@@ -3,7 +3,7 @@
 # Julia version
 JULIAVER=$1
 JULIABIN=/test/julia-$JULIAVER/bin/julia
-TESTCMD=xvfb-run $JULIABIN
+TESTCMD=./xvfb-run $JULIABIN
 
 ## install the image (when necessary)
 /test/install-julia.sh $JULIAVER
