@@ -19,6 +19,12 @@ before_install:
   - docker pull tkpapp/texlive-julia-minimal
 notifications:
   email: false
+addons:
+  apt:
+      packages:
+          - xvfb
+          - xauth
+          - libgtk-3-0
 script:
   - echo "**** running Docker"
   - docker run --env-file travis_docker_env.list -t -a STDOUT -a STDIN -a STDERR -v $PWD:/mnt tkpapp/texlive-julia-minimal /mnt/travis_docker_test_script.sh $TRAVIS_JULIA_VERSION
