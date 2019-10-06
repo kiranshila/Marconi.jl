@@ -21,6 +21,7 @@ addons:
             - pdf2svg
             - poppler-utils
             - texlive
+            - texlive-latex-extra
 script:
  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
  - xvfb-run julia -e 'using Pkg; Pkg.build(); Pkg.test(coverage=true)'
