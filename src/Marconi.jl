@@ -36,7 +36,6 @@ export equationToDataNetwork
 include("Constants.jl")
 
 abstract type AbstractNetwork end
-abstract type AbstractRadiatonPattern end
 
 """
 The base Network type for representing n-port linear networks with characteristic impedance Z0.
@@ -103,13 +102,6 @@ function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
     println(io," Z0 = $(network.Z0)")
     println(io," Equation-driven Network")
   end
-end
-
-function Base.show(io::IO,pattern::RadiationPattern)
-  ϕ = Array(pattern.ϕ); θ = Array(pattern.θ)
-  println(io,"$(length(pattern.pattern))-Element Radiation Pattern")
-  println(io," Φ: $(ϕ[1]) - $(ϕ[end]) deg in $(ϕ[2]-ϕ[1]) deg steps")
-  println(io," θ: $(θ[1]) - $(θ[end]) deg in $(θ[2]-θ[1]) deg steps")
 end
 
 function prettyPrintFrequency(freq::T) where {T <: Real}

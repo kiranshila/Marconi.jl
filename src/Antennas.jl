@@ -14,7 +14,7 @@ export applyAF
 Stores a 3D antenna radiation pattern in spherical coordinates.
 Φ and Θ are in degrees, pattern is in dBi
 """
-mutable struct RadiationPattern <: AbstractRadiatonPattern
+mutable struct RadiationPattern
     ϕ::Union{AbstractRange,Array}
     θ::Union{AbstractRange,Array}
     pattern::Array{Real,2}
@@ -27,7 +27,7 @@ phasor excitations `excitations`. Calling an `ArrayFactor` object with the argum
 ϕ,θ,and frequency will return in dB the value of the AF at that location in spherical
 coordinates.
 """
-mutable struct ArrayFactor <: AbstractRadiatonPattern
+mutable struct ArrayFactor
   locations::Array{Tuple{Real,Real,Real}}
   excitations::Array{Complex}
 end
@@ -234,4 +234,11 @@ function plotPattern3D(pattern::RadiationPattern;gainMin=nothing,gainMax=nothing
                 text=text,hoverinfo="text",colorbar="title"=>"dBi",
                 colorscale="Viridis")
     plot(t,l)
+end
+
+function Base.show(io::IO,pattern::RadiationPattern)
+  ϕ = Array(pattern.ϕ); θ = Array(pattern.θ)
+  println(io,"$(length(pattern.pattern))-Element Radiation Pattern")
+  println(io," Φ: $(ϕ[1]) - $(ϕ[end]) deg in $(ϕ[2]-ϕ[1]) deg steps")
+  println(io," θ: $(θ[1]) - $(θ[end]) deg in $(θ[2]-θ[1]) deg steps")
 end
