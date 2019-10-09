@@ -5,6 +5,12 @@ Pages = ["Antennas.md"]
 Depth = 3
 ```
 
+```@eval
+cd("../../..") # hide
+cp("examples/Pattern.csv","docs/build/man/Pattern.csv", force = true) # hide
+nothing
+```
+
 ## The Basics
 Marconi provides an object for storing and handling radiation pattern data as an interface to working with antennas. This library doesn't intend to ever replace a full-wave solver, but hopefully will provide functions to get started with designing basic antennas and arrays.
 
@@ -25,7 +31,15 @@ data = zeros(Float64,(length(ϕ),length(θ)))
 isotropic = RadiationPattern(ϕ,θ,data)
 ```
 
-The patterns we can generate within Marconi are limited, so most of the pattern data will come from outside sources. Most of what I use this for is importing simulated data from HFSS. This format is a simple CSV file, following a phi,theta,gain format with phi swept first. One can bring in data from an antenna chamber with the same function, as long as the data is evenly sampled.
+The patterns we can generate within Marconi are limited, so most of the pattern data will come from outside sources. Most of what I use this for is importing simulated data from HFSS. This format is a simple CSV file, following a ϕ,θ,gain format with phi swept first. One can bring in data from an antenna chamber with the same function, as long as the data is evenly sampled.
+
+To read from a CSV file in this format, a la HFSS:
+
+```@example rad
+pattern = readHFSSPattern("Pattern.csv")
+```
+
+Notice that this will automatically calculate the range of the pattern in ϕ and θ and create the range objects for you.
 
 
 ### Plotting Radiation Patterns
@@ -33,8 +47,19 @@ We can plot these radiation patterns in 2D and 3D with the Plotly.js backend. Th
 
 To plot a polar 2D plot, call the `plotPattern2D` function with the pattern and a `ϕ` to slice.
 
-FIXME
+```@example rad
+plt = plotPattern2D(pattern,90)
+html_plot(plt) # hide
+```
 
+And to plot in 3D, call the `plotPattern3D` function.
+
+```@example rad
+plt = plotPattern3D(pattern,gainMin = -30)
+html_plot(plt) # hide
+```
+
+Both of these functions utilize the `gainMin` and `gainMax` kwarg to set plotting bounds.
 
 
 ### Antenna Arrays and Array Factor
@@ -44,9 +69,12 @@ In short, an array can be analyzed by first looking at the Array Factor. The Arr
 
 To construct an array, one can provide the locations and excitations directly into the `ArrayFactor` constructor.
 
-```@example af
+```@setup af
 using Marconi
+using PlotlyJS
+```
 
+```@example af
 AF = ArrayFactor([(0,0,0),(1,1,1)],[∠(1,0),∠(1,35)])
 ```
 
@@ -71,17 +99,43 @@ D = AF(45,45,1e9)
 To work with the AF as a pattern, we can evaluate this AF functor at every phi and theta in a list by using the `RadiationPattern` constructor for an `ArrayFactor`.
 
 ```@example af
-Pattern = RadiationPattern(AF,0:360,0:180,1e9)
+Pattern = RadiationPattern(AF,0:360,-180:180,1e9)
 ```
 
 We can then plot this as if it were a regular `RadiationPattern`:
 
 ```@example af
-plotPattern2D(AF,0)
+plt = plotPattern2D(Pattern,0,gainMin=-30)
+html_plot(plt) # hide
 ```
 
 ```@example af
-plotPattern3D(AF,0)
+plt = plotPattern3D(Pattern,gainMin=-30)
+html_plot(plt) # hide
 ```
+
+This is useful for general case arrays, but often we deal with rectangular arrays. A rectangular array can be created with the `generateRectangularAF` function. This requires a number of elements in x and y, the spacing in x and y (in meters), ϕ and θ for the direction of the beam (for a phased array), and a frequency to relate the phasing to the physical distance.
+
+Lets create a broadside λ/2-spaced 4x4 square array for 5.8 GHz and plot it in 3D.
+
+```@example af
+freq = 5.8e9
+λ = c₀/freq
+AF = generateRectangularAF(4,4,λ/4,λ/4,0,0,freq)
+Pattern = RadiationPattern(AF,0:360,0:180,freq)
+plt = plotPattern3D(Pattern,gainMin=-30)
+html_plot(plt) # hide
+```
+
+As expected from theory, we get no sidelobes. We can easily investigate the effect of greater spacing, say λ.
+
+```@example af
+AF = generateRectangularAF(4,4,λ,λ,0,0,freq)
+Pattern = RadiationPattern(AF,0:360,0:180,freq)
+plt = plotPattern3D(Pattern,gainMin=-30)
+html_plot(plt) # hide
+```
+
+
 
 ## Solving Radiation Patterns

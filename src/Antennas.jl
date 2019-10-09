@@ -1,4 +1,6 @@
 using PlotlyJS
+using UUIDs
+using Random
 
 export plotPattern2D
 export plotPattern3D
@@ -8,6 +10,7 @@ export RadiationPattern
 export ArrayFactor
 export generateRectangularAF
 export applyAF
+export html_plot
 
 """
     RadiationPattern
@@ -30,6 +33,10 @@ coordinates.
 mutable struct ArrayFactor
   locations::Array{Tuple{Real,Real,Real}}
   excitations::Array{Complex}
+end
+
+function Base.show(io::IO,AF::ArrayFactor)
+    println(io,"An Array Factor with $(length(AF.excitations)) elements")
 end
 
 function (af::ArrayFactor)(ϕ,θ,freq)
@@ -215,22 +222,26 @@ minimum and maximum gain with kwargs `gainMin` and `gainMax`.
 function plotPattern3D(pattern::RadiationPattern;gainMin=nothing,gainMax=nothing)
     # Scale data to max and min
     if gainMin == nothing
-        @show gainMin = minimum(x->isnan(x) ? -Inf : x,pattern.pattern)
+        gainMin = minimum(x->isnan(x) ? -Inf : x,pattern.pattern)
     end
     if gainMax == nothing
-        @show gainMax = maximum(x->isnan(x) ? -Inf : x,pattern.pattern)
+        gainMax = maximum(x->isnan(x) ? -Inf : x,pattern.pattern)
     end
     # Generate cartesian data
     x,y,z = createCartesianGriddedPattern(pattern,gainMin,gainMax)
     # Generate hover data
-    text = ["$num dBi" for num in pattern.pattern]
+    text = ["$(round(pattern.pattern[i,j],digits=2) ) dBi<br>θ = $(pattern.θ[j])<br>ϕ = $(pattern.ϕ[i])"
+            for i in 1:length(pattern.ϕ), j in 1:length(pattern.θ)]
+    # Generate color data
+    color = [x < gainMin ? gainMin : x for x in pattern.pattern]
     zeroaxis = attr(showgrid=false,showline=false,showticklabels=false,ticks="",title="",zeroline=false)
     l = Layout(paper_bgcolor="rgba(255,255,255, 0.9)",scene=attr(
                showticklabels=false,
                xaxis=zeroaxis,
                yaxis=zeroaxis,
-               zaxis=zeroaxis))
-    t = surface(x=x,y=y,z=z,surfacecolor=pattern.pattern,
+               zaxis=zeroaxis),
+               margin=attr(l=0, r=0, t=0, b=0))
+    t = surface(x=x,y=y,z=z,surfacecolor=color,
                 text=text,hoverinfo="text",colorbar="title"=>"dBi",
                 colorscale="Viridis")
     plot(t,l)
@@ -241,4 +252,19 @@ function Base.show(io::IO,pattern::RadiationPattern)
   println(io,"$(length(pattern.pattern))-Element Radiation Pattern")
   println(io," Φ: $(ϕ[1]) - $(ϕ[end]) deg in $(ϕ[2]-ϕ[1]) deg steps")
   println(io," θ: $(θ[1]) - $(θ[end]) deg in $(θ[2]-θ[1]) deg steps")
+end
+
+function html_plot(p::Union{PlotlyJS.Plot,PlotlyJS.SyncPlot})
+    # Generate unique ID for the div
+    rng = MersenneTwister(1234)
+    uuid = uuid1(rng)
+    html = """\n<div id="$(uuid)"></div>
+            <script>
+                var thediv = document.getElementById('$uuid');
+                var plot_json = $(json(p));
+                var data = plot_json.data;
+                var layout = plot_json.layout;
+                Plotly.newPlot(thediv, data, layout, { responsive: true });
+            </script>\n"""
+    HTML(html)
 end
