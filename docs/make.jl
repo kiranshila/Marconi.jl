@@ -26,8 +26,8 @@ makedocs(
             "Public" =>"lib/Public.md"]])
 
 @info "Adding custom code to HTML"
-pwd()
-for (root, dirs, files) in walkdir("build/man/")
+println(pwd())
+for (root, dirs, files) in walkdir(".")
     for file in filter(x -> endswith(x, "html"),files)
         open(joinpath(root, file),"r+") do f
             # Read all the file after header
