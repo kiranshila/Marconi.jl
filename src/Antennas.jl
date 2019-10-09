@@ -9,6 +9,7 @@ export readHFSSPattern
 export RadiationPattern
 export ArrayFactor
 export generateRectangularAF
+export generateCircularAF
 export applyAF
 export html_plot
 
@@ -77,7 +78,7 @@ end
 
 """
         generateRectangularAF(Nx,Ny,Spacingx,Spacingy,ϕ,θ,freq)
-Creates an `ArrayFactor` object from arectangular array that is `Nx` X `Ny`
+Creates an `ArrayFactor` object from a rectangular array that is `Nx` X `Ny`
 big with spacing `Spacingx` and `Spacingy`. The excitations are phased such that
 the main beam is in the `ϕ`, `θ`, direction at frequency `freq`.
 """
@@ -85,42 +86,47 @@ function generateRectangularAF(Nx,Ny,Spacingx,Spacingy,ϕ,θ,freq)
     # Create Locations
     Locations = []
     # 1D
-    if Nx == 0
-        error("Needs at least one component in x")
-    elseif Ny == 0
-        error("Needs at least one component in y")
-    else
-        # 2D
-        for i in 1:Nx, j in 1:Ny
-            push!(Locations,((i-1)*Spacingx,(j-1)*Spacingy,0))
-        end
+    @assert Nx > 0 "Needs at least one component in x"
+    @assert Nx > 0 "Needs at least one component in x"
+    # 2D
+    for i in 1:Nx, j in 1:Ny
+        push!(Locations,((i-1)*Spacingx,(j-1)*Spacingy,0))
     end
-    R_Hat = [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
     # Calculate phases
-    ω = 2*π*freq
-    k = ω/c₀
+    k = ((2*π*freq)/c₀) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
     Phases = zeros(length(Locations))
     for (i,position) in enumerate(Locations)
-        Phases[i] = -k*R_Hat'*[position...]*(180/π) % 360
-        # Fix weird phases
-        if Phases[i] < 0
-            Phases[i] += 360 # Fix negative angles
-        end
-        if Phases[i] / 360 > 0.99999
-            Phases[i] = 0 # Fix numbers close to 360
-        end
-        if Phases[i] < 1e-10
-            Phases[i] = 0 # Fix some precision errors
-        end
+        Phases[i] = exp(-1im*k⋅[position...])
     end
-    ArrayFactor(Locations,[∠(1,angle) for angle in Phases])
+    ArrayFactor(Locations,Phases)
+end
+
+"""
+        generateCircularAF(N,R,ϕ,θ,freq)
+Creates an `ArrayFactor` object from a circular array with `N` excitations in a
+circle with radius `R`. The excitations are phased such that
+the main beam is in the `ϕ`, `θ`, direction at frequency `freq`.
+"""
+function generateCircularAF(N,R,ϕ,θ,freq)
+    # Create Locations
+    Locations = []
+    for (i,ψ) in enumerate(range(0,2π,length=N))
+        push!(Locations,(R*cos(ψ),R*sin(ψ),0))
+    end
+    # Calculate phases
+    k = ((2*π*freq)/c₀) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
+    Phases = zeros(length(Locations))
+    for (i,position) in enumerate(Locations)
+        Phases[i] = exp(-1im*k⋅[position...])
+    end
+    ArrayFactor(Locations,Phases)
 end
 
 """
         readHFSSPattern("myAntenna.csv")
 Reads the exported fields from HFSS into a Marconi `RadiationPattern` object.
 """
-function readHFSSPattern(filename::String)
+function readHFSSPattern(filename::String)    
     # Read Pattern
     patternData = CSV.read(filename) |> Matrix
 

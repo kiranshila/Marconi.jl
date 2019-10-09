@@ -145,4 +145,30 @@ plt = plotPattern3D(Pattern,gainMin=-30)
 html_plot(plt) # hide
 ```
 
+If we want a circular array with the same number of elements to point in the same direction, we can use the `generateCircularAF` function.
+
+```@example af
+AF = generateCircularAF(16,λ,45,45,freq)
+Pattern = RadiationPattern(AF,0:360,0:180,freq)
+plt = plotPattern3D(Pattern,gainMin=-30)
+html_plot(plt) # hide
+```
+
+### Applying Array Factors to Radiation Pattern Data
+Analyzing the array factor by itself is useful as we can get insight into grating lobes, and some rudimentary gain analysis, but usually we want to investigate what our single element will look like in an array context.
+
+The theory states that we can simply add the dBi array factor to our pattern measurement - assuming we feed the array with the excitations given in the array factor.
+
+Marconi supplies a utility function to generate a `RadiationPattern` from the array factor with the same spherical steps as the pattern. Then it will add two patterns together and return a new `RadiationPattern`. Take the pattern from the beginning of this page for example. We can put it in a 2x2 array with 10mm spacing at 38 GHz, broadside phased.
+
+```@example af
+freq = 38e9
+Pattern = readHFSSPattern("Pattern.csv")
+AF = generateRectangularAF(2,2,10e-3,10e-3,0,0,freq)
+ArrayPattern = applyAF(Pattern,AF,freq)
+plt = plotPattern3D(ArrayPattern,gainMin=-30)
+html_plot(plt) # hide
+```
+
+
 ## Solving Radiation Patterns

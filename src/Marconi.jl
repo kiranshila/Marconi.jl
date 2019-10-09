@@ -411,7 +411,7 @@ end
 """
     inputZ(Zr,Θ,Z0)
 
-Calculates the input impedace of a lossless transmission line of length `θ` in degrees terminated with `Zr`.
+Calculates the input impedance of a lossless transmission line of length `θ` in degrees terminated with `Zr`.
 Z0 is optional and defaults to 50.
 """
 inputZ(Zr,θ;Z0=50.) = Z0*((Zr+Z0*im*tand(θ))/(Z0+Zr*im*tand(θ)))
