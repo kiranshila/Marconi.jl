@@ -121,13 +121,13 @@ Lets create a broadside λ/2-spaced 4x4 square array for 5.8 GHz and plot it in 
 ```@example af
 freq = 5.8e9
 λ = c₀/freq
-AF = generateRectangularAF(4,4,λ/4,λ/4,0,0,freq)
+AF = generateRectangularAF(4,4,λ/2,λ/2,0,0,freq)
 Pattern = RadiationPattern(AF,0:360,0:180,freq)
 plt = plotPattern3D(Pattern,gainMin=-30)
 html_plot(plt) # hide
 ```
 
-As expected from theory, we get no sidelobes. We can easily investigate the effect of greater spacing, say λ.
+As expected from theory, we get no grating lobes. We can easily investigate the effect of greater spacing, say λ.
 
 ```@example af
 AF = generateRectangularAF(4,4,λ,λ,0,0,freq)
@@ -136,6 +136,13 @@ plt = plotPattern3D(Pattern,gainMin=-30)
 html_plot(plt) # hide
 ```
 
+Once again, from theory, we now see grating lobes appear at θ=90. Now if we didn't want the array to be broadside, we can use the `generateRectangularAF` function to steer the array towards an arbitrary direction, say ϕ=45, θ=45.
 
+```@example af
+AF = generateRectangularAF(4,4,λ/2,λ/2,45,45,freq)
+Pattern = RadiationPattern(AF,0:360,0:180,freq)
+plt = plotPattern3D(Pattern,gainMin=-30)
+html_plot(plt) # hide
+```
 
 ## Solving Radiation Patterns
