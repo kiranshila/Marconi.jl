@@ -45,8 +45,8 @@ function (af::ArrayFactor)(ϕ,θ,freq)
     k = (2*π)/(λ) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
     # Constuct steering vector
     v = [exp(1im*k⋅r) for r in af.locations]
-    # Create array factor
-    return 20*log10(abs(transpose(af.excitations)*v))
+    # Create array factor normalized to the total power of the excitations in the array
+    return 10*log10(abs(transpose(af.excitations)*v)^2/sum(map(abs,AF.excitations)))
 end
 
 """
