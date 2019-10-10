@@ -30,3 +30,5 @@ plt = plotPattern3D(Pattern,gainMin=-30)
 
 
 trial = @benchmark readHFSSPattern("Patch.csv")
+
+generateRectangularAF(4,4,9e-3,9e-3,14.3,23.5,38e9)

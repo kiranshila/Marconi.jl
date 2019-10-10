@@ -94,9 +94,9 @@ function generateRectangularAF(Nx,Ny,Spacingx,Spacingy,ϕ,θ,freq)
     end
     # Calculate phases
     k = ((2*π*freq)/c₀) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
-    Phases = zeros(length(Locations))
+    Phases = zeros(ComplexF64,length(Locations))
     for (i,position) in enumerate(Locations)
-        Phases[i] = exp(-1im*k⋅[position...])
+        Phases[i] = exp(1im*k⋅[position...])
     end
     ArrayFactor(Locations,Phases)
 end
@@ -115,9 +115,9 @@ function generateCircularAF(N,R,ϕ,θ,freq)
     end
     # Calculate phases
     k = ((2*π*freq)/c₀) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
-    Phases = zeros(length(Locations))
+    Phases = zeros(ComplexF64,length(Locations))
     for (i,position) in enumerate(Locations)
-        Phases[i] = exp(-1im*k⋅[position...])
+        Phases[i] = exp(1im*k⋅[position...])
     end
     ArrayFactor(Locations,Phases)
 end
@@ -126,7 +126,7 @@ end
         readHFSSPattern("myAntenna.csv")
 Reads the exported fields from HFSS into a Marconi `RadiationPattern` object.
 """
-function readHFSSPattern(filename::String)    
+function readHFSSPattern(filename::String)
     # Read Pattern
     patternData = CSV.read(filename) |> Matrix
 
