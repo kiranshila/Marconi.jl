@@ -439,7 +439,14 @@ function complex2angleString(num::Complex)
   @sprintf "%.3f∠%.3f°" vals[1] vals[2]
 end
 
-
+function findinrange(ran::T,value) where {T <: AbstractRange}
+    if T <: StepRange
+        return Int((value-ran.start)/ran.step + 1)
+    elseif T <:StepRangeLen
+      # I don't know why these behave differently
+        return Int((value-ran[1])/ran.step.hi + 1)
+    end
+end
 
 # Sub files, these need to be at the end here such that the files have access
 # to the types defined in this file

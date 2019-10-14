@@ -11,6 +11,7 @@ export ArrayFactor
 export generateRectangularAF
 export generateCircularAF
 export applyAF
+export phaseLocations
 export html_plot
 
 """
@@ -22,7 +23,12 @@ mutable struct RadiationPattern
     ϕ::Union{AbstractRange,Array}
     θ::Union{AbstractRange,Array}
     pattern::Array{Real,2}
+    min::Tuple
+    max::Tuple
 end
+
+# Defualt Constructor
+RadiationPattern(ϕ,θ,pattern) = RadiationPattern(ϕ,θ,pattern,(findmin(pattern)),(findmax(pattern)))
 
 """
     ArrayFactor
@@ -92,13 +98,22 @@ function generateRectangularAF(Nx,Ny,Spacingx,Spacingy,ϕ,θ,freq)
     for i in 1:Nx, j in 1:Ny
         push!(Locations,((i-1)*Spacingx,(j-1)*Spacingy,0))
     end
-    # Calculate phases
+    Phases = phaseLocations(Locations,ϕ,θ,freq)
+    ArrayFactor(Locations,Phases)
+end
+
+"""
+        phaseLocations(Locations,ϕ,θ,freq)
+Given antennas at locations `Locations` which is a vector of 3-Tuples of cartesian coordinates,
+calculate the corresponding phases to steer the beam in `ϕ` and `θ` at frequency `freq`
+"""
+function phaseLocations(Locations,ϕ,θ,freq)
     k = ((2*π*freq)/c₀) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
     Phases = zeros(ComplexF64,length(Locations))
     for (i,position) in enumerate(Locations)
         Phases[i] = exp(1im*k⋅[position...])
     end
-    ArrayFactor(Locations,Phases)
+    return Phases
 end
 
 """
@@ -113,12 +128,7 @@ function generateCircularAF(N,R,ϕ,θ,freq)
     for (i,ψ) in enumerate(range(0,2π,length=N))
         push!(Locations,(R*cos(ψ),R*sin(ψ),0))
     end
-    # Calculate phases
-    k = ((2*π*freq)/c₀) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
-    Phases = zeros(ComplexF64,length(Locations))
-    for (i,position) in enumerate(Locations)
-        Phases[i] = exp(1im*k⋅[position...])
-    end
+    Phases = phaseLocations(Locations,ϕ,θ,freq)
     ArrayFactor(Locations,Phases)
 end
 
@@ -136,6 +146,13 @@ function readHFSSPattern(filename::String)
     θ_min = Inf
     θ_max = -Inf
 
+    max_val = -Inf
+    max_phi = 0
+    max_theta = 0
+    min_val = Inf
+    min_phi = 0
+    min_theta = 0
+
     for i in 1:size(patternData)[1], j in 1:size(patternData)[2]-1
         # Check column 1 for phi, 2 for theta
         if j == 1
@@ -150,6 +167,18 @@ function readHFSSPattern(filename::String)
             elseif patternData[i,j] < θ_min
                 θ_min = patternData[i,j]
             end
+        elseif j == 3
+            # Third column is data, do checks for min and max
+            if patternData[i,j] > max_val
+                max_val = patternData[i,j]
+                max_phi = patternData[i,1]
+                max_theta = patternData[i,2]
+            end
+            if patternData[i,j] < min_val
+                min_val = patternData[i,j]
+                min_phi = patternData[i,1]
+                min_theta = patternData[i,2]
+            end
         end
     end
 
@@ -159,20 +188,22 @@ function readHFSSPattern(filename::String)
     θ_step = patternData[length(ϕ)+1,2] - patternData[1,2]
     θ = θ_min:θ_step:θ_max
 
+    # Find the indicies for the min and max
+    max_loc = CartesianIndex(findinrange(ϕ,max_phi),findinrange(θ,max_theta))
+    min_loc = CartesianIndex(findinrange(ϕ,min_phi),findinrange(θ,min_theta))
+
     # Create pattern
-    RadiationPattern(ϕ,θ,reshape(patternData[:,3],(length(ϕ),length(θ))))
+    RadiationPattern(ϕ,θ,reshape(patternData[:,3],(length(ϕ),length(θ))),(min_val,min_loc),(max_val,max_loc))
 end
 
 function findmax(pattern::RadiationPattern)
-    val,location = findmax(pattern.pattern)
-    i = location[1]; j = location[2]
-    return val,Array(pattern.ϕ)[i],Array(pattern.θ)[j]
+    i = pattern.max[2][1]; j = pattern.max[2][2]
+    return pattern.max[1],Array(pattern.ϕ)[i],Array(pattern.θ)[j]
 end
 
 function findmin(pattern::RadiationPattern)
-    val,location = findmin(pattern.pattern)
-    i = location[1]; j = location[2]
-    return val,Array(pattern.ϕ)[i],Array(pattern.θ)[j]
+    i = pattern.min[2][1]; j = pattern.min[2][2]
+    return pattern.min[1],Array(pattern.ϕ)[i],Array(pattern.θ)[j]
 end
 
 """
@@ -182,10 +213,10 @@ minimum and maximum gain with kwargs `gainMin` and `gainMax`.
 """
 function plotPattern2D(pattern::RadiationPattern,ϕ::Real;gainMin=nothing,gainMax=nothing)
     if gainMin == nothing
-        gainMin = findmin(pattern)[1]
+        gainMin = pattern.min[1]
     end
     if gainMax == nothing
-        gainMax = findmax(pattern)[1]
+        gainMax = pattern.max[1]
     end
     # Find which column is closest to the requested phi
     index = findmin(abs.(Array(pattern.ϕ).-ϕ))[2]
@@ -228,10 +259,10 @@ minimum and maximum gain with kwargs `gainMin` and `gainMax`.
 function plotPattern3D(pattern::RadiationPattern;gainMin=nothing,gainMax=nothing)
     # Scale data to max and min
     if gainMin == nothing
-        gainMin = minimum(x->isnan(x) ? -Inf : x,pattern.pattern)
+        gainMin = pattern.min[1]
     end
     if gainMax == nothing
-        gainMax = maximum(x->isnan(x) ? -Inf : x,pattern.pattern)
+        gainMax = pattern.max[1]
     end
     # Generate cartesian data
     x,y,z = createCartesianGriddedPattern(pattern,gainMin,gainMax)
