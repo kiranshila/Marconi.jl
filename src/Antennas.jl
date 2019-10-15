@@ -153,7 +153,7 @@ function readHFSSPattern(filename::String)
     min_phi = 0
     min_theta = 0
 
-    for i in 1:size(patternData)[1], j in 1:size(patternData)[2]-1
+    for i in 1:size(patternData)[1], j in 1:size(patternData)[2]
         # Check column 1 for phi, 2 for theta
         if j == 1
             if patternData[i,j] > ϕ_max
