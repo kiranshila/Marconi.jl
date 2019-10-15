@@ -289,6 +289,8 @@ function Base.show(io::IO,pattern::RadiationPattern)
   println(io,"$(length(pattern.pattern))-Element Radiation Pattern")
   println(io," Φ: $(ϕ[1]) - $(ϕ[end]) deg in $(ϕ[2]-ϕ[1]) deg steps")
   println(io," θ: $(θ[1]) - $(θ[end]) deg in $(θ[2]-θ[1]) deg steps")
+  println(io," Min: $(pattern.min[1]) dBi")
+  println(io," Max: $(pattern.max[1]) dBi")
 end
 
 function html_plot(p::Union{PlotlyJS.Plot,PlotlyJS.SyncPlot})
