@@ -339,7 +339,7 @@ end
 """
     testMagDelta(network)
 
-Returns a vector of `Δ`, the determinant of the scattering matrix.
+Returns a vector of `|Δ|`, the magnitude of the determinant of the scattering matrix.
 Optionally, returns `|Δ|` for S-Parameters at position `pos`.
 """
 function testMagDelta(network::T; pos::Int = 0) where {T <: DataNetwork}
@@ -366,6 +366,34 @@ function testK(network::T;pos = 0) where {T <: DataNetwork}
     return (1 - abs(network.s_params[pos][1,1])^2 - abs(network.s_params[pos][2,2])^2 + testMagDelta(network,pos=pos)^2) /
            (2*abs(network.s_params[pos][1,2])*abs(network.s_params[pos][2,1]))
   end
+end
+
+"""
+    testμ(network)
+
+Returns a vector of the magnitude of `μ`, the μ stability factor[1].
+
+# Definition
+
+The network is unconditionally stable if μ > 1, for μ defined as: 
+
+```math
+\\mu = \\frac{1-|S_{11}|^2}{|S_{22}-\\Delta S_{11}^{*}| + |S_{12}S_{21}|}
+```
+
+[1]: M. L. Edwards and J. H. Sinsky, "A new criterion for linear 2-port stability using a single geometrically derived parameter," in IEEE Transactions on Microwave Theory and Techniques, vol. 40, no. 12, pp. 2303-2311, Dec. 1992. doi: 10.1109/22.179894
+"""
+function testμ(network::T;pos=0) where {T <: DataNetwork}
+    @assert network.ports == 2 "Stability tests must be performed on two port networks"
+    if pos == 0
+        return [(1 - abs(network.s_params[i][1,1])^2) /
+                (abs(network.s_params[i][2,2] - testMagDelta(network, pos=i) * network.s_params[i][1,1]') +
+                 abs(network.s_params[i][1,2] * network.s_params[i][2,1])) for i = 1:length(network.frequency)]
+    else
+        return (1 - abs(network.s_params[pos][1,1])^2) /
+               (abs(network.s_params[pos][2,2] - testMagDelta(network, pos=pos) * network.s_params[pos][1,1]') +
+                abs(network.s_params[pos][1,2] * network.s_params[pos][2,1]))
+    end
 end
 
 """
