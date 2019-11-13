@@ -87,7 +87,7 @@ There are two different kinds of stability:
 * Unconditional Stability - $|\Gamma_{In}| < 1$ and $|\Gamma_{Out}| < 1$ for all source and load impedances
 * Conditional Stability - $|\Gamma_{In}| < 1$ and $|\Gamma_{Out}| < 1$ for certain impedances.
 
-To test for unconditional stability, we use the *Rollet Stability Criterion*
+To test for unconditional stability, we can use the *Rollet Stability Criterion*
 
 ```math
 K = \frac{1-|S_{11}|^2-|S_{22}|^2+|\Delta|^2}{2|S_{12}S_{21}|} > 1
@@ -102,6 +102,12 @@ along with the auxiliary condition that
 
 For a device to be unconditionally stable, both of these conditions must be satisfied.
 
+Alternatively, the μ stability parameter is a similar test for unconditional stability that integrates all conditions into a single parameter.
+
+```math
+μ = \frac{1-|S_{11}|^2}{|S_{22}-\Delta S_{11}^{*}| + |S_{12}S_{21}|} > 1
+```
+
 To test these conditions (or plot them), use the following functions:
 
 ```@setup example_stab
@@ -109,7 +115,7 @@ using Marconi
 using PGFPlotsX
 ```
 
-*Example 12.2 from Microwave Engineering my David M. Pozar*
+*Example 12.2 from Microwave Engineering by David M. Pozar*
 ```@example example_stab
 gan_hemt = [0.869*exp(deg2rad(-159)im) 4.250*exp(deg2rad(61)im);0.031*exp(deg2rad(-9)im) 0.507*exp(deg2rad(-117)im)]
 
@@ -125,6 +131,12 @@ and `K` with
 testK(network)[1]
 ```
 So, now we can conclude that this device is *NOT* unconditionally stable at 1.9 GHz as $|\Delta| < 1 $,but $K<1$.
+
+By calculating μ and testing the $\mu > 1$ stability condition a similar conclusion can be reached.
+
+```@example example_stab
+testμ(network)[1]
+```
 
 We can also plot the stability factors as a function of frequency to find stable regions.
 
