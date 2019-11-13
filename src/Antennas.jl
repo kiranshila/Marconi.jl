@@ -1,9 +1,12 @@
 using PlotlyJS
 using UUIDs
 using Random
+using StaticArrays
+using LinearAlgebra
 
 export plotPattern2D
 export plotPattern3D
+export update3DPlot!
 export +
 export readHFSSPattern
 export RadiationPattern
@@ -49,11 +52,11 @@ end
 function (af::ArrayFactor)(ϕ,θ,freq)
     # Construct wave vector
     λ = c₀/freq
-    k = (2*π)/(λ) .* [sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ)]
+    k = (2*π)/(λ) .* SVector(sind(θ)*cosd(ϕ),sind(θ)*sind(ϕ),cosd(θ))
     # Constuct steering vector
-    v = [exp(-1im*k⋅r) for r in af.locations]
+    v = [cis(-dot(k,r)) for r in af.locations]
     # Create array factor normalized to the total power of the excitations in the array
-    return 10*log10(abs(transpose(af.excitations)*v)^2/sum(map(abs,af.excitations)))
+    return 10*log10(abs(dot(af.excitations,v))^2/sum(map(abs,af.excitations)))
 end
 
 """
@@ -153,7 +156,7 @@ function readHFSSPattern(filename::String)
     min_phi = 0
     min_theta = 0
 
-    for i in 1:size(patternData)[1], j in 1:size(patternData)[2]
+    for j in 1:size(patternData)[2], i in 1:size(patternData)[1]
         # Check column 1 for phi, 2 for theta
         if j == 1
             if patternData[i,j] > ϕ_max
@@ -277,11 +280,35 @@ function plotPattern3D(pattern::RadiationPattern;gainMin=nothing,gainMax=nothing
                xaxis=zeroaxis,
                yaxis=zeroaxis,
                zaxis=zeroaxis),
-               margin=attr(l=0, r=0, t=0, b=0))
+               margin=attr(l=0, r=0, t=0, b=0),
+               width=800, height=800)
     t = surface(x=x,y=y,z=z,surfacecolor=color,
                 text=text,hoverinfo="text",colorbar="title"=>"dBi",
                 colorscale="Viridis")
     plot(t,l)
+end
+
+function update3DPlot!(plot,pattern::RadiationPattern,gainMin=nothing,gainMax=nothing)
+    # Scale data to max and min
+    if gainMin == nothing
+        gainMin = pattern.min[1]
+    end
+    if gainMax == nothing
+        gainMax = pattern.max[1]
+    end
+    # Color Data
+    color = [x < gainMin ? gainMin : x for x in pattern.pattern]
+    # Generate hover data
+    text = ["$(round(pattern.pattern[i,j],digits=2) ) dBi<br>θ = $(pattern.θ[j])<br>ϕ = $(pattern.ϕ[i])"
+            for i in 1:length(pattern.ϕ), j in 1:length(pattern.θ)]
+    # Generate cartesian data
+    x,y,z = createCartesianGriddedPattern(pattern,gainMin,gainMax)
+    t = surface(x=x,y=y,z=z,surfacecolor=color,
+                text=text,hoverinfo="text",colorbar="title"=>"dBi",
+                colorscale="Viridis")
+    # Update existing plot
+    deletetraces!(plot,1)
+    addtraces!(plot,1,t)
 end
 
 function Base.show(io::IO,pattern::RadiationPattern)
