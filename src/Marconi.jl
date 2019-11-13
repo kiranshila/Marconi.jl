@@ -22,6 +22,7 @@ export EquationNetwork
 export testDelta
 export testMagDelta
 export testK
+export testμ
 export testMUG
 export testMSG
 export testMAG
@@ -375,7 +376,7 @@ Returns a vector of the magnitude of `μ`, the μ stability factor[1].
 
 # Definition
 
-The network is unconditionally stable if μ > 1, for μ defined as: 
+The network is unconditionally stable if μ > 1, for μ defined as:
 
 ```math
 \\mu = \\frac{1-|S_{11}|^2}{|S_{22}-\\Delta S_{11}^{*}| + |S_{12}S_{21}|}
