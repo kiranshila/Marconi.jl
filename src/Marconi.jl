@@ -46,10 +46,11 @@ mutable struct DataNetwork <: AbstractNetwork
   ports::Int
   Z0::Union{Real,Complex}
   frequency::Array{Real,1}
-  s_params::Array{Array{Union{Real,Complex},2},1}
+  s_params::Array{Union{Real,Complex},3}
 end
 
-function DataNetwork(ports::Int,Z0::Number,frequency::Array{A,1},s_params::Array{B,1}) where {A <: Number, B <: Number}
+# FIXME
+function DataNetwork(ports,Z0,frequency,s_params)
   # Hacky fix as 1x1 array still needs to be Array{T,2}
   s_params = [hcat(param) for param in s_params]
   DataNetwork(ports,Z0,frequency,s_params)
@@ -88,11 +89,11 @@ end
 Utility function to convert an equation network to a data network by evaluating it at every frequency in the list
 or range `freqs`.
 """
-function equationToDataNetwork(network::EquationNetwork;args::Tuple=(),freqs::Union{StepRangeLen,Array})
+function equationToDataNetwork(network;args=(),freqs)
   DataNetwork(network.ports,network.Z0,Array(freqs),[network.eq(args...,Z0=network.Z0,freq = f) for f in freqs])
 end
 
-function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
+function Base.show(io::IO,network::AbstractNetwork)
   if T == DataNetwork
     println(io,"$(network.ports)-Port Network")
     println(io," Z0 = $(network.Z0)")
@@ -105,7 +106,7 @@ function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
   end
 end
 
-function prettyPrintFrequency(freq::T) where {T <: Real}
+function prettyPrintFrequency(freq)
   multiplierString = ""
   multiplier = 1
   if freq < 1e3
@@ -139,7 +140,7 @@ This will convert all file types to S-Parameters, Real/Imaginary
 
 Currently does not support reference lines (Different port impedances) or noise parameters
 """
-function readTouchstone(filename::String)
+function readTouchstone(filename)
   # File option settings - defaults
   thisfreqExponent = 1e9
   thisParamType = S
@@ -218,7 +219,7 @@ function readTouchstone(filename::String)
 end
 
 "Internal function to process touchstone lines"
-function processTouchstoneLine(line::String,freqExp::Real,paramT::paramType,paramF::paramFormat,Z0::T) where {T <: Number}
+function processTouchstoneLine(line,freqExp,paramT,paramF,Z0)
   lineParts = [data for data in split(line) if data != ""]
   frequency = parse(Float64,lineParts[1]) * freqExp
   ports = √((length(lineParts)-1)/2) # Parameters are in two parts for each port
@@ -265,7 +266,7 @@ end
 
 Writes a Touchstone file from a Marconi network.
 """
-function writeTouchstone(network::AbstractNetwork,filename::String)
+function writeTouchstone(network,filename)
   body = "! Generated from Marconi.jl"
   body *= "\n# Hz S RI R 50\n"
   if network.ports == 1
@@ -299,7 +300,7 @@ function writeTouchstone(network::AbstractNetwork,filename::String)
 end
 
 
-function isPassive(network::T) where {T <: AbstractNetwork}
+function isPassive(network)
   for parameter in network.s_params
     for s in parameter
       if abs(s) > 1
@@ -312,12 +313,12 @@ function isPassive(network::T) where {T <: AbstractNetwork}
 end
 
 
-function isReciprocal(network::T) where {T <: AbstractNetwork}
+function isReciprocal(network)
   # FIXME
   return true
 end
 
-function isLossless(network::T) where {T <: AbstractNetwork}
+function isLossless(network)
   # FIXME
   return true
 end
@@ -328,7 +329,7 @@ end
 Returns a vector of `Δ`, the determinant of the scattering matrix.
 Optionally, returns `Δ` for S-Parameters at position `pos`.
 """
-function testDelta(network::T;pos::Int = 0) where {T <: DataNetwork}
+function testDelta(network;pos = 0)
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
     return [det(param) for param in network.s_params]
@@ -343,7 +344,7 @@ end
 Returns a vector of `|Δ|`, the magnitude of the determinant of the scattering matrix.
 Optionally, returns `|Δ|` for S-Parameters at position `pos`.
 """
-function testMagDelta(network::T; pos::Int = 0) where {T <: DataNetwork}
+function testMagDelta(network; pos = 0)
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
     return [abs(x) for x in testDelta(network)]
@@ -357,7 +358,7 @@ end
 
 Returns a vector of the magnitude of `K`, the Rollet stability factor.
 """
-function testK(network::T;pos = 0) where {T <: DataNetwork}
+function testK(network;pos = 0)
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
   if pos == 0
     magDelta = [abs(delta) for delta in testDelta(network)]
@@ -384,7 +385,7 @@ The network is unconditionally stable if μ > 1, for μ defined as:
 
 [1]: M. L. Edwards and J. H. Sinsky, "A new criterion for linear 2-port stability using a single geometrically derived parameter," in IEEE Transactions on Microwave Theory and Techniques, vol. 40, no. 12, pp. 2303-2311, Dec. 1992. doi: 10.1109/22.179894
 """
-function testμ(network::T;pos=0) where {T <: DataNetwork}
+function testμ(network;pos=0)
     @assert network.ports == 2 "Stability tests must be performed on two port networks"
     if pos == 0
         return [(1 - abs(network.s_params[i][1,1])^2) /
@@ -402,7 +403,7 @@ end
 
 Returns a vector of the maximum unilateral gain of a network.
 """
-function testMUG(network::DataNetwork)
+function testMUG(network)
   @assert network.ports == 2 "Gain calculations must be performed on two port networks"
   [abs(s[2,1])^2 / ( (1-abs(s[1,1])^2) * (1-abs(s[2,2])^2) ) for s in network.s_params]
 end
@@ -412,7 +413,7 @@ end
 
 Returns a vector of the maximum stable gain of a network.
 """
-function testMSG(network::DataNetwork)
+function testMSG(network)
   @assert network.ports == 2 "Gain calculations must be performed on two port networks"
   [abs(s[2,1]) / abs(s[1,2]) for s in network.s_params]
 end
@@ -422,7 +423,7 @@ end
 
 Returns a vector of the maximum available gain of a network.
 """
-function testMAG(network::DataNetwork)
+function testMAG(network)
   @assert network.ports == 2 "Gain calculations must be performed on two port networks"
   K = testK(network)
   [K[i] > 1 ? (1/(K[i]+sqrt(K[i]^2-1))) * (abs(network.s_params[i][2,1])/abs(network.s_params[i][1,2])) : NaN for i in 1:length(network.frequency)]
@@ -434,7 +435,7 @@ end
 A nice compact way of representing phasors. Angle is in degrees.
 """
 function ∠(a,b)
-  a*exp(im*deg2rad(b))
+  a*cis(deg2rad(b))
 end
 
 """
@@ -461,20 +462,17 @@ Z0 is optional and defaults to 50.
 """
 Γ(Z;Z0=50.) = (Z-Z0)/(Z+Z0)
 
-complex2angle(num::Complex) = (abs(num),atand(imag(num),real(num)))
-
-function complex2angleString(num::Complex)
-  vals = complex2angle(num)
+function complex2angleString(num)
+  vals = angle(num) * 180/π
   @sprintf "%.3f∠%.3f°" vals[1] vals[2]
 end
 
-function findinrange(ran::T,value) where {T <: AbstractRange}
-    if T <: StepRange
-        return Int((value-ran.start)/ran.step + 1)
-    elseif T <:StepRangeLen
-      # I don't know why these behave differently
-        return Int((value-ran[1])/ran.step.hi + 1)
-    end
+function findinrange(ran::StepRange,value)
+  return Int((value-ran.start)/ran.step + 1)
+end
+
+function findinrange(ran::StepRangeLen,value)
+  return Int((value-ran[1])/ran.step.hi + 1)
 end
 
 # Sub files, these need to be at the end here such that the files have access
