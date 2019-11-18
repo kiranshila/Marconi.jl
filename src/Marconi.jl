@@ -31,10 +31,10 @@ export inputZ
 export Γ
 export interpolate
 export complex2angleString
-export complex2angle
 export equationToDataNetwork
 
 include("Constants.jl")
+include("NetworkParameters.jl") # Needed here for touchstone conversion
 
 abstract type AbstractNetwork end
 
@@ -44,9 +44,9 @@ The base Network type for representing n-port linear networks with characteristi
 """
 mutable struct DataNetwork <: AbstractNetwork
   ports::Int
-  Z0::Union{Real,Complex}
+  Z0::Number
   frequency::Array{Real,1}
-  s_params::Array{Union{Real,Complex},3}
+  s_params::Union{Array{Number,3},Nothing}
 end
 
 # FIXME
@@ -128,137 +128,139 @@ function prettyPrintFrequency(freq)
   return "$(freq/multiplier) $(multiplierString)Hz"
 end
 
-# File option enums
-@enum paramType S Y Z G H
-@enum paramFormat MA DB RI
-
 """
     readTouchstone("myFile.sNp")
 
-Reads the contents of `myFile.sNp` into a Network object.
-This will convert all file types to S-Parameters, Real/Imaginary
+Reads the contents of `myFile.sNp` into an N-Port Network object.
+This will convert all file types to S-Parameters, Real/Imaginary internally
+
+Touchstone files must be v1.1 or older
 
 Currently does not support reference lines (Different port impedances) or noise parameters
 """
 function readTouchstone(filename)
-  # File option settings - defaults
-  thisfreqExponent = 1e9
-  thisParamType = S
-  thisParamFormat = MA
-  thisZ0 = 50.
+  freqScale = 1 # Scaling factor for frequencies
+  paramFunction = x -> x # Function to transform params
+  paramFormat = (r,i) -> complex(r,i) # Function to transform param format, eg db to ri
+  # Empty network object to store results, get num ports from file extension
+  network = DataNetwork(parse(Int64,filename[end-1]),50.,[],nothing)
 
-  # Setup blank network object to build from
-  thisNetwork = DataNetwork(0,0,[],[])
+  waitForOptions = true
+  lastLineNumber = 1 # To keep track for multi-port nonsense
+  matrixToFill = nothing # To store the partially constructed matrix for n > 2 port files
 
-  # Open the file
-  open(filename) do f
-    while !eof(f)
-      line = readline(f)
-      if line == "" || line[1] == '!' # Ignore comment lines and empty lines
-        continue
-      elseif line[1] == '#' # Parse option line
-        # Option line contains [HZ/KHZ/MHZ/GHZ] [S/Y/Z/G/H] [MA/DB/RI] [R n]
-        # Or contains nothing implying GHZ S MA R 50
-        options = line[2:end]
-        if length(options) == 0
-          continue # Use defaults
-        else
-          options = split(strip(options))
-          # Some VNAs put random amounts of spaces between the options,
-          # so we have to remove all the empty entries
-          options = [option for option in options if option != ""]
-
-          # Process frequency exponent
-          if lowercase(options[1]) == "hz"
-            thisfreqExponent = 1.
-          elseif lowercase(options[1]) == "khz"
-            thisfreqExponent = 1e3
-          elseif lowercase(options[1]) == "mhz"
-            thisfreqExponent = 1e6
-          elseif lowercase(options[1]) == "ghz"
-            thisfreqExponent = 1e9
-          end
-
-          # Process Parameter Type
-          if lowercase(options[2]) == "s"
-            thisParamType = S
-          elseif lowercase(options[2]) == "y"
-            thisParamType = Y
-          elseif lowercase(options[2]) == "z"
-            thisParamType = Z
-          elseif lowercase(options[2]) == "g"
-            thisParamType = G
-          elseif lowercase(options[2]) == "h"
-            thisParamType = H
-          end
-
-          # Process Parameter Format
-          if lowercase(options[3]) == "ma"
-            thisParamFormat = MA
-          elseif lowercase(options[3]) == "db"
-            thisParamFormat = DB
-          elseif lowercase(options[3]) == "ri"
-            thisParamFormat = RI
-          end
-
-          # Process Z0
-          thisZ0 = parse(Float64,options[5])
+  open(filename) do file
+    for ln in eachline(file)
+        # Ignore comment lines and comments after lines
+        line = split(ln,"!")[1]
+        if line == ""
+          continue # skip lines that start with a comment
         end
-      else # Process everything else
-        freq, ports, params = processTouchstoneLine(line,thisfreqExponent,thisParamType,thisParamFormat,thisZ0)
-        thisNetwork.ports = ports
-        thisNetwork.Z0 = thisZ0
-        push!(thisNetwork.frequency,freq)
-        push!(thisNetwork.s_params,params)
-      end
+
+        if waitForOptions
+          # Parse the option line
+          if line[1] == '#'
+            options = filter(x->x != "",split(line[2:end]," "))
+
+            # Frequency Scale, Hz is 1, no change needed
+            if lowercase(options[1][1]) == 'k'
+              freqScale = 1e3
+            elseif lowercase(options[1][1]) == 'm'
+              freqScale = 1e6
+            elseif lowercase(options[1][1]) == 'g'
+              freqScale = 1e9
+            elseif lowercase(options[1][1]) == 't'
+              freqScale = 1e12
+            end
+
+            # Parameter Type
+            if lowercase(options[2]) == 'y'
+              paramFunction = y2s
+            elseif lowercase(options[2]) == 'z'
+              paramFunction = z2s
+            elseif lowercase(options[2]) == 'g'
+              paramFunction = g2s
+            elseif lowercase(options[2]) == 'h'
+              paramFunction = h2s
+            end
+
+            # Paramter Format
+            if lowercase(options[3][1]) == 'm'
+              paramFormat = (m,a) -> ∠(m,a)
+            elseif lowercase(options[3][1]) == 'd'
+              paramFormat = (d,a) -> ∠(10^(d/20),a)
+            end
+
+            # Characteristic Impedance
+            network.Z0 = parse(Float64,options[5])
+
+            # Completed options
+            waitForOptions = false
+          end
+          continue
+        end
+
+        # Parse every data line
+        vals = parse.(Float64,split(line))
+        if length(vals) != 0
+          # On the first data line, setup the matrix
+          if network.s_params == nothing
+            network.s_params = Array{Number}(undef, network.ports, network.ports, 0)
+          end
+
+          # Now we do different things depending on the number of ports
+          if network.ports == 1
+            # We don't need to parse lines in weird ways
+            push!(network.frequency,vals[1] * freqScale)
+            number = paramFormat(vals[2:end] ...) # Reformat number
+            number = fill(number,(1,1)) # Reformat to 1x1
+            cat!(network.s_params,number,dims=3) # Cat into network object
+          elseif network.ports == 2
+            # The order is strange, 11 21 12 22
+            push!(network.frequency,vals[1] * freqScale)
+            one_one = paramFormat(vals[2:3] ...)
+            two_one = paramFormat(vals[4:5] ...)
+            one_two = paramFormat(vals[6:7] ...)
+            two_two = paramFormat(vals[8:9] ...)
+            mat = [one_one one_two;two_one two_two]
+            network.s_params = cat(network.s_params,mat,dims=3) # Cat into network object
+          else
+            # Numbers will be in matrix order, with the first row containing the frequency point
+            # First row will include the frequency, but the following rows will not
+            if lastLineNumber == 1
+              # First row, include the frequency
+              push!(network.frequency,vals[1] * freqScale)
+              # Collect pairs into, well, pairs
+              valPairs = collect(Iterators.partition(vals[2:end],2))
+              # Map the format function into the pairs of complex numbers
+              row = map(x -> paramFormat(x...),valPairs)
+              # Fill in first row of matrix, zero out the rest
+              matrixToFill = [row' ; zeros(network.ports-1,network.ports)]
+              lastLineNumber += 1
+            elseif lastLineNumber != 1 && lastLineNumber != network.ports
+              # Inbetween rows, just map values, push line number
+              valPairs = collect(Iterators.partition(vals,2))
+              row = map(x -> paramFormat(x...),valPairs)
+              # Fill in first row of matrix
+              matrixToFill[lastLineNumber,:] = row'
+              lastLineNumber += 1
+            elseif lastLineNumber == network.ports
+              # Last row, just map values, line number back to 1
+              valPairs = collect(Iterators.partition(vals,2))
+              row = map(x -> paramFormat(x...),valPairs)
+              # Fill in first row of matrix
+              matrixToFill[lastLineNumber,:] = row'
+              network.s_params = cat(network.s_params,matrixToFill,dims=3) # Cat into network object
+              lastLineNumber = 1
+            end
+          end
+        end
     end
   end
-
-  # Return the constructed network
-  return thisNetwork
-end
-
-"Internal function to process touchstone lines"
-function processTouchstoneLine(line,freqExp,paramT,paramF,Z0)
-  lineParts = [data for data in split(line) if data != ""]
-  frequency = parse(Float64,lineParts[1]) * freqExp
-  ports = √((length(lineParts)-1)/2) # Parameters are in two parts for each port
-  if mod(ports,1) != 0
-    throw(DimensionMismatch("Parameters in file are not square, somethings up"))
-  end
-  ports = floor(Int,ports) # It needs to be an Int anyway
-
-  # Step 1, get the parameters into RI format as that's what we will use
-  params = zeros(Complex,ports,ports)
-  for i = 2:2:(ports*ports*2) # Skip frequency
-    # There will be ports*ports number of parameters
-    paramIndex = floor(Int,i/2)
-    if paramF == RI # Real Imaginary
-      # Do nothing, already in the right type
-      params[paramIndex] = parse(Float64,lineParts[i]) + 1.0im * parse(Float64,lineParts[i+1])
-    elseif paramF == MA # Magnitude Angle(Degrees)
-      mag = parse(Float64,lineParts[i])
-      angle = parse(Float64,lineParts[i+1])
-      params[paramIndex] = mag  * cosd(angle) +
-                           1.0im * mag  * sind(angle)
-    elseif paramF == DB # dB Angle
-      mag = 10^(parse(Float64,lineParts[i])/20)
-      angle = parse(Float64,lineParts[i+1])
-      params[paramIndex] = mag  * cosd(angle) +
-                           1.0im * mag  * sind(angle)
-    end
-  end
-
-  # Step 2, convert into S-Parameters
-  if paramT == S
-    # Do nothing, they are already S
-  elseif paramT == Z
-    params = z2s(params,Z0=Z0)
-  elseif paramT == Y
-    params = y2s(params,Z0=Z0)
-  end # TODO H and G Parameters
-
-  return frequency,ports,params
+  # At this point, the network object is filled, but has the wrong parameter.
+  # We have to map the paramFunction to every element
+  return network
+  network.s_params = map()
 end
 
 """
@@ -468,16 +470,15 @@ function complex2angleString(num)
 end
 
 function findinrange(ran::StepRange,value)
-  return Int((value-ran.start)/ran.step + 1)
+  return (value-ran.start) ÷ ran.step + 1
 end
 
 function findinrange(ran::StepRangeLen,value)
-  return Int((value-ran[1])/ran.step.hi + 1)
+  return (value-ran[1]) ÷ ran.step.hi + 1
 end
 
 # Sub files, these need to be at the end here such that the files have access
 # to the types defined in this file
-include("NetworkParameters.jl")
 include("MarconiPlots.jl")
 include("Antennas.jl")
 #include("Metamaterials.jl")
