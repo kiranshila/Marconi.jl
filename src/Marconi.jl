@@ -19,8 +19,8 @@ export AbstractNetwork
 export AbstractRadiatonPattern
 export DataNetwork
 export EquationNetwork
-export testDelta
-export testMagDelta
+export testΔ
+export testMagΔ
 export testK
 export testμ
 export testMUG
@@ -32,6 +32,7 @@ export Γ
 export interpolate
 export complex2angleString
 export equationToDataNetwork
+export mapView3
 
 include("Constants.jl")
 include("NetworkParameters.jl") # Needed here for touchstone conversion
@@ -49,18 +50,20 @@ mutable struct DataNetwork <: AbstractNetwork
   s_params::Union{Array{Number,3},Nothing}
 end
 
-# FIXME
-function DataNetwork(ports,Z0,frequency,s_params)
-  # Hacky fix as 1x1 array still needs to be Array{T,2}
-  s_params = [hcat(param) for param in s_params]
-  DataNetwork(ports,Z0,frequency,s_params)
-end
-
 function ==(a::DataNetwork,b::DataNetwork)
   a.ports == b.ports &&
   a.Z0 == b.Z0 &&
   a.frequency == b.frequency &&
   a.s_params == b.s_params
+end
+
+"""
+        mapView3(f,A)
+Returns a vector that is the result of mapping f on slices of A down dimension 3. =
+"""
+function mapView3(f,A)
+  @assert length(size(A)) == 3 "A must be three dimensional"
+  @views [f(A[:,:,i]) for i in 1:size(A,3)]
 end
 
 """
@@ -274,27 +277,27 @@ function writeTouchstone(network,filename)
   if network.ports == 1
     for i in 1:length(network.frequency)
       body *= "$(network.frequency[i])\t"
-      body *= "$(real(network.s_params[i][1,1]))\t"
-      body *= "$(imag(network.s_params[i][1,1]))\n"
+      body *= "$(real(network.s_params[1,1,i]))\t"
+      body *= "$(imag(network.s_params[1,1,i]))\n"
     end
   elseif network.ports == 2
     for i in 1:length(network.frequency)
       # In the order S11, S21, S12, S22
       body *= "$(network.frequency[i])\t"
-      body *= "$(real(network.s_params[i][1,1]))\t"
-      body *= "$(imag(network.s_params[i][1,1]))\t"
+      body *= "$(real(network.s_params[1,1,i]))\t"
+      body *= "$(imag(network.s_params[1,1,i]))\t"
 
-      body *= "$(real(network.s_params[i][2,1]))\t"
-      body *= "$(imag(network.s_params[i][2,1]))\t"
+      body *= "$(real(network.s_params[2,1,i]))\t"
+      body *= "$(imag(network.s_params[2,1,i]))\t"
 
-      body *= "$(real(network.s_params[i][1,2]))\t"
-      body *= "$(imag(network.s_params[i][1,2]))\t"
+      body *= "$(real(network.s_params[1,2,i]))\t"
+      body *= "$(imag(network.s_params[1,2,i]))\t"
 
-      body *= "$(real(network.s_params[i][2,2]))\t"
-      body *= "$(imag(network.s_params[i][2,2]))\n"
+      body *= "$(real(network.s_params[2,2,i]))\t"
+      body *= "$(imag(network.s_params[2,2,i]))\n"
     end
   elseif network.ports >= 2
-
+    # FIXME
   end
   io = open(filename, "w")
   print(io, body)
@@ -303,14 +306,7 @@ end
 
 
 function isPassive(network)
-  for parameter in network.s_params
-    for s in parameter
-      if abs(s) > 1
-        return false
-      end
-    end
-  end
-  # If we got through everything, then it's passive
+  # FIXME
   return true
 end
 
@@ -326,50 +322,44 @@ function isLossless(network)
 end
 
 """
-    testDelta(network)
+    testΔ(network)
 
 Returns a vector of `Δ`, the determinant of the scattering matrix.
-Optionally, returns `Δ` for S-Parameters at position `pos`.
 """
-function testDelta(network;pos = 0)
+function testΔ(network;pos = 0)
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
-  if pos == 0
-    return [det(param) for param in network.s_params]
-  else
-    return det(network.s_params[pos])
-  end
+  mapView3(det,network.s_params)
 end
 
 """
-    testMagDelta(network)
+    testMagΔ(network)
 
 Returns a vector of `|Δ|`, the magnitude of the determinant of the scattering matrix.
-Optionally, returns `|Δ|` for S-Parameters at position `pos`.
+
+It is necessary that |Δ| must be < 1 for a device to be stable.
 """
-function testMagDelta(network; pos = 0)
+function testMagΔ(network)
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
-  if pos == 0
-    return [abs(x) for x in testDelta(network)]
-  else
-    return abs(testDelta(network,pos=pos))
-  end
+  abs.(mapView3(det,network.s_params))
 end
 
 """
     testK(network)
 
 Returns a vector of the magnitude of `K`, the Rollet stability factor.
+
+# Definition
+
+It is necessary that K must be > 1 for a device to be stable, for K defined as:
+```math
+K = \\frac{1-|S_{11}|^2-|S_{22}|^2+|\\Delta|^2}{2|S_{12}S_{21}|}
+```
 """
-function testK(network;pos = 0)
+function testK(network)
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
-  if pos == 0
-    magDelta = [abs(delta) for delta in testDelta(network)]
-    return [(1 - abs(network.s_params[i][1,1])^2 - abs(network.s_params[i][2,2])^2 + magDelta[i]^2) /
-            (2*abs(network.s_params[i][1,2])*abs(network.s_params[i][2,1])) for i = 1:length(network.frequency)]
-  else
-    return (1 - abs(network.s_params[pos][1,1])^2 - abs(network.s_params[pos][2,2])^2 + testMagDelta(network,pos=pos)^2) /
-           (2*abs(network.s_params[pos][1,2])*abs(network.s_params[pos][2,1]))
-  end
+  magΔ = testMagΔnetwork)
+  return @. (1 - abs(network.s_params[1,1,:])^2 - abs(network.s_params[2,2,:])^2 + magΔ^2) /
+            (2 * abs(network.s_params[2,1,:] * network.s_params[1,2,:]))
 end
 
 """
@@ -387,17 +377,12 @@ The network is unconditionally stable if μ > 1, for μ defined as:
 
 [1]: M. L. Edwards and J. H. Sinsky, "A new criterion for linear 2-port stability using a single geometrically derived parameter," in IEEE Transactions on Microwave Theory and Techniques, vol. 40, no. 12, pp. 2303-2311, Dec. 1992. doi: 10.1109/22.179894
 """
-function testμ(network;pos=0)
+function testμ(network)
     @assert network.ports == 2 "Stability tests must be performed on two port networks"
-    if pos == 0
-        return [(1 - abs(network.s_params[i][1,1])^2) /
-                (abs(network.s_params[i][2,2] - testMagDelta(network, pos=i) * network.s_params[i][1,1]') +
-                 abs(network.s_params[i][1,2] * network.s_params[i][2,1])) for i = 1:length(network.frequency)]
-    else
-        return (1 - abs(network.s_params[pos][1,1])^2) /
-               (abs(network.s_params[pos][2,2] - testMagDelta(network, pos=pos) * network.s_params[pos][1,1]') +
-                abs(network.s_params[pos][1,2] * network.s_params[pos][2,1]))
-    end
+    Δ = testΔ(network)
+    return @. (1 - abs(network.s_params[1,1,:])^2) /
+              (abs(network.s_params[2,2,:] - Δ * conj(network.s_params[1,1,:])) +
+               abs(network.s_params[1,2,:] * network.s_params[2,1,:]))
 end
 
 """
@@ -407,7 +392,8 @@ Returns a vector of the maximum unilateral gain of a network.
 """
 function testMUG(network)
   @assert network.ports == 2 "Gain calculations must be performed on two port networks"
-  [abs(s[2,1])^2 / ( (1-abs(s[1,1])^2) * (1-abs(s[2,2])^2) ) for s in network.s_params]
+  return @. abs(network.s_params[2,1,:])^2 /
+            ((1-abs(network.s_params[1,1,:])^2) * (1-abs(network.s_params[2,2,:])^2) )
 end
 
 """
@@ -417,7 +403,7 @@ Returns a vector of the maximum stable gain of a network.
 """
 function testMSG(network)
   @assert network.ports == 2 "Gain calculations must be performed on two port networks"
-  [abs(s[2,1]) / abs(s[1,2]) for s in network.s_params]
+  return @. abs(network.s_params[2,1,:]) / abs(network.s_params[1,2,:])
 end
 
 """
@@ -428,7 +414,8 @@ Returns a vector of the maximum available gain of a network.
 function testMAG(network)
   @assert network.ports == 2 "Gain calculations must be performed on two port networks"
   K = testK(network)
-  [K[i] > 1 ? (1/(K[i]+sqrt(K[i]^2-1))) * (abs(network.s_params[i][2,1])/abs(network.s_params[i][1,2])) : NaN for i in 1:length(network.frequency)]
+  replace!(x -> x <= 1 ? NaN : x, K)
+  return @. (1/(K+sqrt(K^2-1))) * (abs(network.s_params[2,1,:])/abs(network.s_params[1,2,:]))
 end
 
 """

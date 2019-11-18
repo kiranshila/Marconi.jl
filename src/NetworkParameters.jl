@@ -24,7 +24,7 @@ export cascade
 Converts S-Parameters `s` to Z-Parameters. Optionally include reference
 impedance with kwarg `Z0` with `s2z(s,Z0=50)`.
 """
-function s2z(s::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+function s2z(s;Z0=50.)
     sqrtZref = Diagonal([√(Z0) for i in 1:size(s)[1]])
     return sqrtZref*(I+s)*(I-s)^-1*sqrtZref
 end
@@ -35,7 +35,7 @@ end
 Converts S-Parameters `s` to Y-Parameters. Optionally include reference
 impedance with kwarg `Z0` with `s2z(s,Z0=50)`.
 """
-function s2y(s::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+function s2y(s;Z0=50.)
     sqrtYref = Diagonal([√(1/Z0) for i in 1:size(s)[1]])
     return sqrtYref*(I-s)*(I+s)^-1*sqrtYref
 end
@@ -45,7 +45,7 @@ end
 
 Converts S-Parameters `s` to T-Parameters.
 """
-function s2t(s::Array{T,2}) where {T <: Number}
+function s2t(s)
     @assert size(s)[1] == 2 "s2t is only supported for 2 ports"
     return (1/s[2,1]) .* [s[1,2]*s[2,1] - s[1,1]*s[2,2] s[1,1];-s[2,2] 1]
 end
@@ -57,7 +57,7 @@ end
 Converts Z-Parameters `z` to S-Parameters. Optionally include reference
 impedance with kwarg `Z0` with `z2s(z,Z0=50)`.
 """
-function z2s(z::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+function z2s(z;Z0=50.)
     sqrtYref = Diagonal([√(1/Z0) for i in 1:size(z)[1]])
     return (sqrtYref * z * sqrtYref - I)*(sqrtYref*z*sqrtYref + I)^-1
 end
@@ -67,7 +67,7 @@ end
 
 Converts Z-Parameters `z` to Y-Parameters.
 """
-function z2y(z::Array{A,2}) where {A <: Number}
+function z2y(z)
     return z^-1
 end
 
@@ -77,7 +77,7 @@ end
 Converts Z-Parameters `z` to T-Parameters. Optionally include reference
 impedance with kwarg `Z0` with `z2s(z,Z0=50)`.
 """
-function z2t(z::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+function z2t(z;Z0=50.)
     return s2t(z2s(z,Z0=Z0))
 end
 
@@ -88,7 +88,7 @@ end
 Converts Y-Parameters `y` to S-Parameters. Optionally include reference
 impedance with kwarg `Z0` with `y2s(y,Z0=50)`.
 """
-function y2s(y::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+function y2s(y;Z0=50.)
     sqrtZref = Diagonal([√(Z0) for i in 1:size(y)[1]])
     return (I-sqrtZref*y*sqrtZref)*(I+sqrtZref*y*sqrtZref)^-1
 end
@@ -98,7 +98,7 @@ end
 
 Converts Y-Parameters `y` to Z-Parameters.
 """
-function y2z(y::Array{A,2}) where {A <: Number}
+function y2z(y)
     return y^-1
 end
 
@@ -108,7 +108,7 @@ end
 Converts Y-Parameters `y` to T-Parameters. Optionally include reference
 impedance with kwarg `Z0` with `y2s(y,Z0=50)`.
 """
-function y2t(y::Array{A,2};Z0::B=50.) where {A <: Number, B <: Number}
+function y2t(y;Z0=50.)
     return s2t(y2s(y,Z0=Z0))
 end
 
@@ -119,7 +119,7 @@ end
 
 Converts T-Parameters `t` to S-Parameters.
 """
-function t2s(t::Array{T,2}) where {T <: Number}
+function t2s(t)
     @assert size(t)[1] == 2 "t2s is only supported for 2 ports"
     return [t[1,2]/t[2,2] t[1,1]-((t[1,2]*t[2,1])/t[2,2]);
             1/t[2,2] -t[2,1]/t[2,2]]

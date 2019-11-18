@@ -1,4 +1,5 @@
 using PGFPlotsX
+using PlotlyJS
 
 export plotSStabCircle!
 export plotLStabCircle!
@@ -118,11 +119,11 @@ function plotSmithCircle!(smith::SmithChart,xc::A,yc::B,rad::C;
   return smith
 end
 
-dB20(x::T) where {T <: Real} = 20*log10(x)
-dB20(x::T) where {T <: Complex} = 20*log10(abs(x))
+dB20(x::Real) = 20*log10(x)
+dB20(x::Complex) = 20*log10(abs(x))
 
-dB(x::T) where {T <: Real} = 10*log10(x)
-dB(x::T) where {T <: Complex} = 10*log10(abs(x))
+dB(x::Real) = 10*log10(x)
+dB(x::Complex) = 10*log10(abs(x))
 
 function plotRectangular(network::T,
                          parameter::Tuple{Int,Int},
