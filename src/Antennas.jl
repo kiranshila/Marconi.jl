@@ -3,10 +3,6 @@ using UUIDs
 using Random
 using StaticArrays
 using LinearAlgebra
-
-export plotPattern2D
-export plotPattern3D
-export update3DPlot!
 export +
 export readHFSSPattern
 export RadiationPattern
@@ -15,7 +11,6 @@ export generateRectangularAF
 export generateCircularAF
 export applyAF
 export phaseLocations
-export html_plot
 
 """
     RadiationPattern
@@ -209,108 +204,6 @@ function findmin(pattern::RadiationPattern)
     return pattern.min[1],Array(pattern.ϕ)[i],Array(pattern.θ)[j]
 end
 
-"""
-        plotPattern2D(pattern,ϕ)
-Plots the 2D Radiation Pattern of `pattern` at the phi cut `ϕ`. Optionally can set the
-minimum and maximum gain with kwargs `gainMin` and `gainMax`.
-"""
-function plotPattern2D(pattern::RadiationPattern,ϕ::Real;gainMin=nothing,gainMax=nothing)
-    if gainMin == nothing
-        gainMin = pattern.min[1]
-    end
-    if gainMax == nothing
-        gainMax = pattern.max[1]
-    end
-    # Find which column is closest to the requested phi
-    index = findmin(abs.(Array(pattern.ϕ).-ϕ))[2]
-    t = scatterpolar(r=pattern.pattern[index,:],theta=pattern.θ)
-    l = Layout(polar=attr(radialaxis=attr(angle=90,autorange=false,range=[gainMin,gainMax]),
-                                                angularaxis=attr(rotation = 90,direction = "clockwise")))
-
-    plot(t,l)
-end
-
-function createCartesianGriddedPattern(pattern::RadiationPattern,gainMin,gainMax)
-    dataSize = (length(pattern.ϕ),length(pattern.θ))
-    # Preallocalte matricies
-    x = zeros(Float64,dataSize)
-    y = zeros(Float64,dataSize)
-    z = zeros(Float64,dataSize)
-
-    # Reshape radius data
-    r = [(data + abs(gainMin))/(gainMax+abs(gainMin)) for data in pattern.pattern]
-    # Eliminate negative numbers
-    for i in 1:dataSize[1], j in 1:dataSize[2]
-        if r[i,j] < 0
-            r[i,j] = 0
-        end
-    end
-
-    for (i,phi) in enumerate(pattern.ϕ), (j,theta) in enumerate(pattern.θ)
-        x[i,j] = r[i,j] * sind(theta) * cosd(phi)
-        y[i,j] = r[i,j] * sind(theta) * sind(phi)
-        z[i,j] = r[i,j] * cosd(theta)
-    end
-    return x,y,z
-end
-
-"""
-        plotPattern3D(pattern,ϕ)
-Plots the 3D Radiation Pattern of `pattern`. Optionally can set the
-minimum and maximum gain with kwargs `gainMin` and `gainMax`.
-"""
-function plotPattern3D(pattern::RadiationPattern;gainMin=nothing,gainMax=nothing)
-    # Scale data to max and min
-    if gainMin == nothing
-        gainMin = pattern.min[1]
-    end
-    if gainMax == nothing
-        gainMax = pattern.max[1]
-    end
-    # Generate cartesian data
-    x,y,z = createCartesianGriddedPattern(pattern,gainMin,gainMax)
-    # Generate hover data
-    text = ["$(round(pattern.pattern[i,j],digits=2) ) dBi<br>θ = $(pattern.θ[j])<br>ϕ = $(pattern.ϕ[i])"
-            for i in 1:length(pattern.ϕ), j in 1:length(pattern.θ)]
-    # Generate color data
-    color = [x < gainMin ? gainMin : x for x in pattern.pattern]
-    zeroaxis = attr(showgrid=false,showline=false,showticklabels=false,ticks="",title="",zeroline=false)
-    l = Layout(paper_bgcolor="rgba(255,255,255, 0.9)",scene=attr(
-               showticklabels=false,
-               xaxis=zeroaxis,
-               yaxis=zeroaxis,
-               zaxis=zeroaxis),
-               margin=attr(l=0, r=0, t=0, b=0),
-               width=800, height=800)
-    t = surface(x=x,y=y,z=z,surfacecolor=color,
-                text=text,hoverinfo="text",colorbar="title"=>"dBi",
-                colorscale="Viridis")
-    plot(t,l)
-end
-
-function update3DPlot!(plot,pattern::RadiationPattern,gainMin=nothing,gainMax=nothing)
-    # Scale data to max and min
-    if gainMin == nothing
-        gainMin = pattern.min[1]
-    end
-    if gainMax == nothing
-        gainMax = pattern.max[1]
-    end
-    # Color Data
-    color = [x < gainMin ? gainMin : x for x in pattern.pattern]
-    # Generate hover data
-    text = ["$(round(pattern.pattern[i,j],digits=2) ) dBi<br>θ = $(pattern.θ[j])<br>ϕ = $(pattern.ϕ[i])"
-            for i in 1:length(pattern.ϕ), j in 1:length(pattern.θ)]
-    # Generate cartesian data
-    x,y,z = createCartesianGriddedPattern(pattern,gainMin,gainMax)
-    t = surface(x=x,y=y,z=z,surfacecolor=color,
-                text=text,hoverinfo="text",colorbar="title"=>"dBi",
-                colorscale="Viridis")
-    # Update existing plot
-    deletetraces!(plot,1)
-    addtraces!(plot,1,t)
-end
-
 function Base.show(io::IO,pattern::RadiationPattern)
   ϕ = Array(pattern.ϕ); θ = Array(pattern.θ)
   println(io,"$(length(pattern.pattern))-Element Radiation Pattern")
@@ -318,19 +211,4 @@ function Base.show(io::IO,pattern::RadiationPattern)
   println(io," θ: $(θ[1]) - $(θ[end]) deg in $(θ[2]-θ[1]) deg steps")
   println(io," Min: $(pattern.min[1]) dBi")
   println(io," Max: $(pattern.max[1]) dBi")
-end
-
-function html_plot(p::Union{PlotlyJS.Plot,PlotlyJS.SyncPlot})
-    # Generate unique ID for the div
-    rng = MersenneTwister(1234)
-    uuid = uuid1(rng)
-    html = """\n<div id="$(uuid)"></div>
-            <script>
-                var thediv = document.getElementById('$uuid');
-                var plot_json = $(json(p));
-                var data = plot_json.data;
-                var layout = plot_json.layout;
-                Plotly.newPlot(thediv, data, layout, { responsive: true });
-            </script>\n"""
-    HTML(html)
 end

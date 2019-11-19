@@ -7,10 +7,14 @@ export plotVSWR!
 export plotSmithData
 export plotSmithData!
 export plotSmithCircle!
-export plotRectangular
-export plotRectangular!
-export dB
-export dB20
+
+# Plotly Stuff
+import PlotlyJS.plot # To extend
+export plot
+export plotPattern2D
+export plotPattern3D
+export update3DPlot!
+export html_plot
 
 """
     plotSmithData(network,(1,1))
@@ -119,454 +123,6 @@ function plotSmithCircle!(smith::SmithChart,xc::A,yc::B,rad::C;
   return smith
 end
 
-dB20(x::Real) = 20*log10(x)
-dB20(x::Complex) = 20*log10(abs(x))
-
-dB(x::Real) = 10*log10(x)
-dB(x::Complex) = 10*log10(abs(x))
-
-function plotRectangular(network::T,
-                         parameter::Tuple{Int,Int},
-                         pltFunc::Function = dB20,
-                         paramFormat::paramType = S;
-                         axopts::PGFPlotsX.Options = @pgf({}),
-                         opts::PGFPlotsX.Options = @pgf({}),
-                         freqs::Union{StepRangeLen,Array, Nothing} = nothing,
-                         args::Tuple = (),
-                         label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
-  # Check that data is in bounds
-  if parameter[1] > network.ports || parameter[1] < 1
-    throw(DomainError(parameter[1], "Dimension 1 Out of Bounds"))
-  end
-  if parameter[2] > network.ports || parameter[2] < 1
-    throw(DomainError(parameter[1], "Dimension 2 Out of Bounds"))
-  end
-
-  # Array of object for data
-  data = nothing
-
-  if T == DataNetwork
-    # Convert parameter
-    if paramFormat == S
-      # Do nothing
-      data = network.s_params
-    elseif paramFormat == Y
-      data = s2y(network.s_params, Z0 = network.Z0)
-    elseif paramFormat == Z
-      data = s2z(network.s_params, Z0 = network.Z0)
-    elseif paramFormat == G
-      data = s2g(network.s_params, Z0 = network.Z0)
-    elseif paramFormat == H
-      data = s2h(network.s_params, Z0 = network.Z0)
-    end
-  elseif T == EquationNetwork
-    @assert freqs != nothing "freqs must be defined for plotting equation-driven networks."
-    # Grab s-parameter data for each frequency
-      data = [network.eq(args...,freq = x, Z0 = network.Z0) for x in freqs]
-    if paramFormat == S
-      # Do nothing
-    elseif paramFormat == Y
-      data = s2y(data, Z0 = network.Z0)
-    elseif paramFormat == Z
-      data = s2z(data, Z0 = network.Z0)
-    elseif paramFormat == G
-      data = s2g(data, Z0 = network.Z0)
-    elseif paramFormat == H
-      data = s2h(data, Z0 = network.Z0)
-    end
-  end
-
-    # Collect the data we want
-    data = [d[parameter[1],parameter[2]] for d in data]
-
-    # Apply plotting function
-    data = [pltFunc(num) for num in data]
-
-    # Find frequency multiplier from the last element
-    multiplierString = ""
-    multiplier = 1
-    freq = nothing
-    if T == DataNetwork
-      freq = network.frequency[end]
-    elseif T == EquationNetwork
-      freq = freqs[end]
-    end
-    if freq < 1e3
-      multiplierString = ""
-      multiplier = 1
-    elseif 1e3 <= freq < 1e6
-      multiplierString = "K"
-      multiplier = 1e3
-    elseif 1e6 <= freq < 1e9
-      multiplierString = "M"
-      multiplier = 1e6
-    elseif 1e9 <= freq < 1e12
-      multiplierString = "G"
-      multiplier = 1e9
-    elseif 1e12 <= freq < 1e15
-      multiplierString = "T"
-      multiplier = 1e12
-    end
-
-    frequency = nothing
-    if T == DataNetwork
-      frequency = network.frequency ./ multiplier
-    elseif T == EquationNetwork
-      frequency = freqs ./ multiplier
-    end
-
-    # Format with freq
-    data = [(frequency[i],data[i]) for i = 1:length(data)]
-
-    xlabel = "Frequency ($(multiplierString)Hz)"
-
-    # Create the PGFslotsX axis
-    if label != nothing
-      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none",opts...},Coordinates(data)),LegendEntry(label))
-      return p
-    else
-      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none",opts...},Coordinates(data)))
-      return p
-    end
-end
-
-function plotRectangular(network::T,
-                         pltFunc::Function;
-                         axopts::PGFPlotsX.Options = @pgf({}),
-                         opts::PGFPlotsX.Options = @pgf({}),
-                         freqs::Union{StepRangeLen,Array, Nothing} = nothing,
-                         args::Tuple = (),
-                         label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
-
-    if T == EquationNetwork
-      # Apply plotting function
-      network = equationToDataNetwork(network,args=args,freqs=freqs)
-    end
-
-    # Apply plotting function
-    data = pltFunc(network)
-
-    # Find frequency multiplier from the last element
-    multiplierString = ""
-    multiplier = 1
-    freq = network.frequency[end]
-    if freq < 1e3
-      multiplierString = ""
-      multiplier = 1
-    elseif 1e3 <= freq < 1e6
-      multiplierString = "K"
-      multiplier = 1e3
-    elseif 1e6 <= freq < 1e9
-      multiplierString = "M"
-      multiplier = 1e6
-    elseif 1e9 <= freq < 1e12
-      multiplierString = "G"
-      multiplier = 1e9
-    elseif 1e12 <= freq < 1e15
-      multiplierString = "T"
-      multiplier = 1e12
-    end
-
-    frequency = network.frequency ./ multiplier
-
-    # Format with freq
-    data = [(frequency[i],data[i]) for i = 1:length(data)]
-
-    xlabel = "Frequency ($(multiplierString)Hz)"
-
-    # Create the PGFslotsX axis
-    if label != nothing
-      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none", opts...},Coordinates(data)),LegendEntry(label))
-    else
-      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none", opts...},Coordinates(data)))
-    end
-    # Draw on rectangular axis
-    return p
-end
-
-function plotRectangular(network::T,
-                         pltFunc::Function,
-                         pltFunc2::Function;
-                         axopts::PGFPlotsX.Options = @pgf({}),
-                         opts::PGFPlotsX.Options = @pgf({}),
-                         freqs::Union{StepRangeLen,Array, Nothing} = nothing,
-                         args::Tuple = (),
-                         label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
-
-    if T == EquationNetwork
-      # Apply plotting function
-      network = equationToDataNetwork(network,args=args,freqs=freqs)
-    end
-
-    # Apply plotting functions
-    data = pltFunc(network)
-    data = [pltFunc2(d) for d in data]
-
-    # Find frequency multiplier from the last element
-    multiplierString = ""
-    multiplier = 1
-    freq = network.frequency[end]
-    if freq < 1e3
-      multiplierString = ""
-      multiplier = 1
-    elseif 1e3 <= freq < 1e6
-      multiplierString = "K"
-      multiplier = 1e3
-    elseif 1e6 <= freq < 1e9
-      multiplierString = "M"
-      multiplier = 1e6
-    elseif 1e9 <= freq < 1e12
-      multiplierString = "G"
-      multiplier = 1e9
-    elseif 1e12 <= freq < 1e15
-      multiplierString = "T"
-      multiplier = 1e12
-    end
-
-    frequency = network.frequency ./ multiplier
-
-    # Format with freq
-    data = [(frequency[i],data[i]) for i = 1:length(data)]
-
-    xlabel = "Frequency ($(multiplierString)Hz)"
-
-    # Create the PGFslotsX axis
-    if label != nothing
-      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none", opts...},Coordinates(data)),LegendEntry(label))
-    else
-      p = @pgf Axis({xlabel=xlabel, axopts...},PlotInc({mark = "none", opts...},Coordinates(data)))
-    end
-    # Draw on rectangular axis
-    return p
-end
-
-function plotRectangular!(ax::Axis,
-                          network::T,
-                         pltFunc::Function,
-                         pltFunc2::Function;
-                         axopts::PGFPlotsX.Options = @pgf({}),
-                         opts::PGFPlotsX.Options = @pgf({}),
-                         freqs::Union{StepRangeLen,Array, Nothing} = nothing,
-                         args::Tuple = (),
-                         label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
-
-    if T == EquationNetwork
-      # Apply plotting function
-      network = equationToDataNetwork(network,args=args,freqs=freqs)
-    end
-
-    # Apply plotting functions
-    data = pltFunc(network)
-    data = [pltFunc2(d) for d in data]
-
-    # Find frequency multiplier from the last element
-    multiplierString = ""
-    multiplier = 1
-    freq = network.frequency[end]
-    if freq < 1e3
-      multiplierString = ""
-      multiplier = 1
-    elseif 1e3 <= freq < 1e6
-      multiplierString = "K"
-      multiplier = 1e3
-    elseif 1e6 <= freq < 1e9
-      multiplierString = "M"
-      multiplier = 1e6
-    elseif 1e9 <= freq < 1e12
-      multiplierString = "G"
-      multiplier = 1e9
-    elseif 1e12 <= freq < 1e15
-      multiplierString = "T"
-      multiplier = 1e12
-    end
-
-    frequency = network.frequency ./ multiplier
-
-    # Format with freq
-    data = [(frequency[i],data[i]) for i = 1:length(data)]
-
-    xlabel = "Frequency ($(multiplierString)Hz)"
-
-    # Create the PGFslotsX plot
-    if label != nothing
-      plt = @pgf PlotInc({mark = "none", opts...},Coordinates(data))
-      push!(ax,plt)
-      push!(ax,@pgf(LegendEntry(label)))
-    else
-      plt = @pgf PlotInc({mark = "none", opts...},Coordinates(data))
-      push!(ax,plt)
-    end
-    # Draw on rectangular axis
-    return ax
-end
-
-function plotRectangular!(ax::Axis,
-                          network::T,
-                          pltFunc::Function;
-                          axopts::PGFPlotsX.Options = @pgf({}),
-                          opts::PGFPlotsX.Options = @pgf({}),
-                          freqs::Union{StepRangeLen,Array, Nothing} = nothing,
-                          args::Tuple = (),
-                          label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
-  if T == EquationNetwork
-    # Apply plotting function
-    network = equationToDataNetwork(network,args=args,freqs=freqs)
-  end
-  # Apply plotting function
-  data = pltFunc(network)
-
-  # Create y label
-  ylabel = "$(pltFunc)"
-
-  # Find frequency multiplier from the last element
-  multiplierString = ""
-  multiplier = 1
-  freq = network.frequency[end]
-  if freq < 1e3
-    multiplierString = ""
-    multiplier = 1
-  elseif 1e3 <= freq < 1e6
-    multiplierString = "K"
-    multiplier = 1e3
-  elseif 1e6 <= freq < 1e9
-    multiplierString = "M"
-    multiplier = 1e6
-  elseif 1e9 <= freq < 1e12
-    multiplierString = "G"
-    multiplier = 1e9
-  elseif 1e12 <= freq < 1e15
-    multiplierString = "T"
-    multiplier = 1e12
-  end
-
-  frequency = network.frequency ./ multiplier
-
-  # Format with freq
-  data = [(frequency[i],data[i]) for i = 1:length(data)]
-
-  xlabel = "Frequency ($(multiplierString)Hz)"
-
-  # Create the PGFslotsX plot
-  if label != nothing
-    plt = @pgf PlotInc({mark = "none", opts...},Coordinates(data))
-    push!(ax,plt)
-    push!(ax,@pgf(LegendEntry(label)))
-  else
-    plt = @pgf PlotInc({mark = "none", opts...},Coordinates(data))
-    push!(ax,plt)
-  end
-  # Draw on rectangular axis
-  return ax
-end
-
-function plotRectangular!(ax::Axis,
-                          network::T,
-                          parameter::Tuple{Int,Int},
-                          pltFunc::Function = dB20,
-                          paramFormat::paramType = S;
-                          opts::PGFPlotsX.Options = @pgf({}),
-                          freqs::Union{StepRangeLen,Array, Nothing} = nothing,
-                          args::Tuple = (),
-                          label::Union{String,Nothing} = nothing) where {T <: AbstractNetwork}
-  # Check that data is in bounds
-  if parameter[1] > network.ports || parameter[1] < 1
-    throw(DomainError(parameter[1], "Dimension 1 Out of Bounds"))
-  end
-  if parameter[2] > network.ports || parameter[2] < 1
-    throw(DomainError(parameter[1], "Dimension 2 Out of Bounds"))
-  end
-
-  # Array of object for data
-  data = nothing
-
-  if T == DataNetwork
-    # Convert parameter
-    if paramFormat == S
-      # Do nothing
-      data = network.s_params
-    elseif paramFormat == Y
-      data = s2y(network.s_params, Z0 = network.Z0)
-    elseif paramFormat == Z
-      data = s2z(network.s_params, Z0 = network.Z0)
-    elseif paramFormat == G
-      data = s2g(network.s_params, Z0 = network.Z0)
-    elseif paramFormat == H
-      data = s2h(network.s_params, Z0 = network.Z0)
-    end
-  elseif T == EquationNetwork
-    @assert freqs != nothing "freqs must be defined for plotting equation-driven networks."
-    # Grab s-parameter data for each frequency
-      data = [network.eq(args...,freq = x, Z0 = network.Z0) for x in freqs]
-    if paramFormat == S
-      # Do nothing
-    elseif paramFormat == Y
-      data = s2y(data, Z0 = network.Z0)
-    elseif paramFormat == Z
-      data = s2z(data, Z0 = network.Z0)
-    elseif paramFormat == G
-      data = s2g(data, Z0 = network.Z0)
-    elseif paramFormat == H
-      data = s2h(data, Z0 = network.Z0)
-    end
-  end
-
-    # Collect the data we want
-    data = [d[parameter[1],parameter[2]] for d in data]
-
-    # Apply plotting function
-    data = [pltFunc(num) for num in data]
-
-    # Find frequency multiplier from the last element
-    multiplierString = ""
-    multiplier = 1
-    freq = nothing
-    if T == DataNetwork
-      freq = network.frequency[end]
-    elseif T == EquationNetwork
-      freq = freqs[end]
-    end
-    if freq < 1e3
-      multiplierString = ""
-      multiplier = 1
-    elseif 1e3 <= freq < 1e6
-      multiplierString = "K"
-      multiplier = 1e3
-    elseif 1e6 <= freq < 1e9
-      multiplierString = "M"
-      multiplier = 1e6
-    elseif 1e9 <= freq < 1e12
-      multiplierString = "G"
-      multiplier = 1e9
-    elseif 1e12 <= freq < 1e15
-      multiplierString = "T"
-      multiplier = 1e12
-    end
-
-    frequency = nothing
-    if T == DataNetwork
-      frequency = network.frequency ./ multiplier
-    elseif T == EquationNetwork
-      frequency = freqs ./ multiplier
-    end
-
-
-    # Format with freq
-    data = [(frequency[i],data[i]) for i = 1:length(data)]
-
-    xlabel = "Frequency ($(multiplierString)Hz)"
-
-    # Create the PGFslotsX plot
-    plt = @pgf PlotInc({mark = "none", opts...},Coordinates(data))
-
-    # Push to axis
-    push!(ax,plt)
-    if label != nothing
-      push!(ax,@pgf(LegendEntry(label)))
-    end
-    # Draw on rectangular axis
-    return ax
-end
-
 """
     plotVSWR!(sc,VSWR)
 
@@ -609,4 +165,223 @@ function plotLStabCircle!(sc::SmithChart,network::T,freq::Real;
   Cs = conj(s[2,2] - testDelta(network,pos = position) * conj(s[1,1])) /
        (abs(s[2,2])^2 - testMagDelta(network,pos = position)^2)
   plotSmithCircle!(sc,real(Cs),imag(Cs),rs,opts=opts,label=label)
+end
+
+# Utility function for plotting to the docs
+function html_plot(p::Union{PlotlyJS.Plot,PlotlyJS.SyncPlot})
+    # Generate unique ID for the div
+    rng = MersenneTwister(1234)
+    uuid = uuid1(rng)
+    html = """\n<div id="$(uuid)"></div>
+            <script>
+                var thediv = document.getElementById('$uuid');
+                var plot_json = $(json(p));
+                var data = plot_json.data;
+                var layout = plot_json.layout;
+                Plotly.newPlot(thediv, data, layout, { responsive: true });
+            </script>\n"""
+    HTML(html)
+end
+
+
+#  =============== Rectangular Plotting Code =============== #
+
+function closestPrefix(num)
+  if num >= 1e24
+    return 'Y',1e24
+  elseif num >= 1e21
+    return 'Z',1e21
+  elseif num >= 1e18
+    return 'E',1e18
+  elseif num >= 1e15
+    return 'P',1e15
+  elseif num >= 1e12
+    return 'T',1e12
+  elseif num >= 1e9
+    return 'G',1e9
+  elseif num >= 1e6
+    return 'M',1e6
+  elseif num >= 1e3
+    return 'k',1e3
+  elseif num >= 1e2
+    return 'h',1e2
+  elseif num >= 1e1
+    return "da",1e1
+  elseif num >= 1e-1
+    return 'd',1e-1
+  elseif num >= 1e-2
+    return 'c',1e-2
+  elseif num >= 1e-3
+    return 'm',1e-3
+  elseif num >= 1e-6
+    return 'μ',1e-6
+  elseif num >= 1e-9
+    return 'n',1e-9
+  elseif num >= 1e-12
+    return 'p',1e-12
+  elseif num >= 1e-15
+    return 'f',1e-15
+  elseif num >= 1e-18
+    return 'a',1e-18
+  elseif num >= 1e-21
+    return 'z',1e-21
+  elseif num >= 1e-24
+    return 'y',1e-24
+  end
+end
+
+"""
+    plot(network)
+
+Plots s,z,y,t
+"""
+function plot(network::DataNetwork,param::Tuple=(1,1),f::Function=dB;kwargs...)
+  # Scale frequency
+  prefix = closestPrefix(network.frequency[end])
+  prettyFrequency = @. network.frequency / prefix[2]
+
+  # Create trace of parameter
+  plotVec = map(f,network.s_params[param[1],param[2],:])
+  trace = scatter(;x=prettyFrequency,y=plotVec,kwargs...)
+  layout = Layout(xaxis_title = "Frequency ($(prefix[1])Hz)")
+  plot(trace,layout)
+end
+
+function plot(network::DataNetwork,f::Function;kwargs...)
+  # Scale frequency
+  prefix = closestPrefix(network.frequency[end])
+  prettyFrequency = @. network.frequency / prefix[2]
+
+  trace = scatter(;x=prettyFrequency,y=f(network),kwargs...)
+  layout = Layout(xaxis_title = "Frequency ($(prefix[1])Hz)")
+  plot(trace,layout)
+end
+
+function plot!(plot,network::DataNetwork,param::Tuple=(1,1),f::Function=dB;kwargs...)
+  # Scale frequency
+  prefix = closestPrefix(network.frequency[end])
+  prettyFrequency = @. network.frequency / prefix[2]
+
+  # Create trace of parameter
+  plotVec = map(f,network.s_params[param[1],param[2],:])
+  trace = scatter(;x=prettyFrequency,y=plotVec,kwargs...)
+
+  # Append trace to plot
+  addtraces!(plot,1,trace)
+end
+
+function plot!(plot,network::DataNetwork,f::Function;kwargs...)
+  # Scale frequency
+  prefix = closestPrefix(network.frequency[end])
+  prettyFrequency = @. network.frequency / prefix[2]
+
+  trace = scatter(;x=prettyFrequency,y=f(network),kwargs...)
+  layout = Layout(xaxis_title = "Frequency ($(prefix[1])Hz)")
+
+  # Append trace to plot
+  addtraces!(plot,1,trace)
+end
+
+#  =============== Antenna Plotting Code =============== #
+
+function createCartesianGriddedPattern(pattern::RadiationPattern,gainMin,gainMax)
+    dataSize = (length(pattern.ϕ),length(pattern.θ))
+    # Preallocalte matricies
+    x = zeros(Float64,dataSize)
+    y = zeros(Float64,dataSize)
+    z = zeros(Float64,dataSize)
+
+    # Reshape radius data
+    r = [(data + abs(gainMin))/(gainMax+abs(gainMin)) for data in pattern.pattern]
+    # Eliminate negative numbers
+    for i in 1:dataSize[1], j in 1:dataSize[2]
+        if r[i,j] < 0
+            r[i,j] = 0
+        end
+    end
+
+    for (i,phi) in enumerate(pattern.ϕ), (j,theta) in enumerate(pattern.θ)
+        x[i,j] = r[i,j] * sind(theta) * cosd(phi)
+        y[i,j] = r[i,j] * sind(theta) * sind(phi)
+        z[i,j] = r[i,j] * cosd(theta)
+    end
+    return x,y,z
+end
+
+"""
+        plotPattern3D(pattern,ϕ)
+Plots the 3D Radiation Pattern of `pattern`. Optionally can set the
+minimum and maximum gain with kwargs `gainMin` and `gainMax`.
+"""
+function plotPattern3D(pattern::RadiationPattern;gainMin=nothing,gainMax=nothing)
+    # Scale data to max and min
+    if gainMin == nothing
+        gainMin = pattern.min[1]
+    end
+    if gainMax == nothing
+        gainMax = pattern.max[1]
+    end
+    # Generate cartesian data
+    x,y,z = createCartesianGriddedPattern(pattern,gainMin,gainMax)
+    # Generate hover data
+    text = ["$(round(pattern.pattern[i,j],digits=2) ) dBi<br>θ = $(pattern.θ[j])<br>ϕ = $(pattern.ϕ[i])"
+            for i in 1:length(pattern.ϕ), j in 1:length(pattern.θ)]
+    # Generate color data
+    color = [x < gainMin ? gainMin : x for x in pattern.pattern]
+    zeroaxis = attr(showgrid=false,showline=false,showticklabels=false,ticks="",title="",zeroline=false)
+    l = Layout(paper_bgcolor="rgba(255,255,255, 0.9)",scene=attr(
+               showticklabels=false,
+               xaxis=zeroaxis,
+               yaxis=zeroaxis,
+               zaxis=zeroaxis),
+               margin=attr(l=0, r=0, t=0, b=0),
+               width=800, height=800)
+    t = surface(x=x,y=y,z=z,surfacecolor=color,
+                text=text,hoverinfo="text",colorbar="title"=>"dBi",
+                colorscale="Viridis")
+    plot(t,l)
+end
+
+"""
+        plotPattern2D(pattern,ϕ)
+Plots the 2D Radiation Pattern of `pattern` at the phi cut `ϕ`. Optionally can set the
+minimum and maximum gain with kwargs `gainMin` and `gainMax`.
+"""
+function plotPattern2D(pattern::RadiationPattern,ϕ::Real;gainMin=nothing,gainMax=nothing)
+    if gainMin == nothing
+        gainMin = pattern.min[1]
+    end
+    if gainMax == nothing
+        gainMax = pattern.max[1]
+    end
+    # Find which column is closest to the requested phi
+    index = findmin(abs.(Array(pattern.ϕ).-ϕ))[2]
+    t = scatterpolar(r=pattern.pattern[index,:],theta=pattern.θ)
+    l = Layout(polar=attr(radialaxis=attr(angle=90,autorange=false,range=[gainMin,gainMax]),
+                                                angularaxis=attr(rotation = 90,direction = "clockwise")))
+
+    plot(t,l)
+end
+
+function update3DPlot!(plot,pattern::RadiationPattern,gainMin=nothing,gainMax=nothing)
+    # Scale data to max and min
+    if gainMin == nothing
+        gainMin = pattern.min[1]
+    end
+    if gainMax == nothing
+        gainMax = pattern.max[1]
+    end
+    # Color Data
+    color = [x < gainMin ? gainMin : x for x in pattern.pattern]
+    # Generate hover data
+    text = ["$(round(pattern.pattern[i,j],digits=2) ) dBi<br>θ = $(pattern.θ[j])<br>ϕ = $(pattern.ϕ[i])"
+            for i in 1:length(pattern.ϕ), j in 1:length(pattern.θ)]
+    # Generate cartesian data
+    x,y,z = createCartesianGriddedPattern(pattern,gainMin,gainMax)
+    t = surface(x=x,y=y,z=z,surfacecolor=color,
+                text=text,hoverinfo="text",colorbar="title"=>"dBi",
+                colorscale="Viridis")
+    # Update existing plot
+    deletetraces!(plot,1)
+    addtraces!(plot,1,t)
 end

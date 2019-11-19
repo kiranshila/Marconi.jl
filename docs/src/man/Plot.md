@@ -1,22 +1,23 @@
 # Plotting
 !!! note
 
-    The plotting library depends on a working installation of PGFPlotsX.jl
+    The plotting library depends on a working installation of PGFPlotsX.jl and PlotlyJS.jl.
+    Smith Charts are handled by PGFPlotsX while antennas and everything else are handled with Plotly. As soon as the PR is finished for Smith Charts, everything will transition to Plotly.
 
 ```@contents
 Pages = ["Plot.md"]
 Depth = 3
 ```
 
-The core of the plotting functionality in Marconi comes from the `PGFPlotsX` backend.
-This library allows for publication-quality graphics with complete configurability of
+The core of the plotting functionality in Marconi comes from the `PGFPlotsX` and `PlotlyJS` backends.
+
+These libraries allows for publication-quality graphics with complete configurability of
 the layout itself.
 
 The functions within the plotting library merely contextualize the `Network` object or
-other parameters into a `PGFPlotsX` plot object.
+other parameters into a `PGFPlotsX` or `PlotlyJS` plot object.
 
-It is highly recommended to thoroughly read the docs for `PGFPlotsX` to make the post of
-its plotting capability.
+It is highly recommended to thoroughly read the docs for `PGFPlotsX` and `PlotlyJS` to make the most of their plotting capabilities.
 
 ## Smith Charts
 
@@ -132,50 +133,24 @@ sc = SmithChart(axis_style)
 
 ## Rectangular Plots
 
-To plot on a rectangular axis, we call the `plotRectangular` and `plotRectangular!` functions.
-
-These operate similar in functionality to the smith chart plotting utilities as `plotRectangular` accepts a network object and the parameter to plot. Additionally,
-`plotRectangular` requires a function to apply to make 1-D data. This could be `dB` or `dB20` for `20log10` as supplied by this library, `real`, `imag`, or some other function. Finally, one could plot any network parameter, be it S, Z, Y, or T.
-
-Same as `plotSmithData`, `plotRectangular!` accepts an `opts` kwarg as well as an `axopts` kwarg for `plotRectangular` as it is creating an axis object.
+To plot on a rectangular axis, we simply call the `plot` function. `plot` by itself will plot S(1,1) in dB. The optional second positional argument is a tuple of the parameter to plot and the third optional argument is a function to map over the slice of the parameter in frequency.
 
 ```@setup example_rec
 using Marconi
-using PGFPlotsX
+using PlotlyJS
 ```
 
 ```@example example_rec
 amp = readTouchstone("Amp.s2p")
-ax = plotRectangular(amp,(1,1),dB,label="S(1,1)")
-plotRectangular!(ax,amp,(2,1),dB,label="S(2,1)")
-ax["ylabel"] = "dB"
-ax # hide
+plt = plot(amp,(1,1),dB,name="S(1,1)")
+plot!(plt,amp,(2,1),dB,name="S(2,1)")
+html_plot(plt) # hide
 ```
 
-Also, instead of supplying a tuple for the parameter to plot, one can supply a function to reduce a network
-to an array. There are several in this library for calculating stability, gain, and otherwise.
+Also, instead of supplying a tuple for the parameter to plot, one can supply a function to apply to the whole network. This function must take a `DataNetwork` as an argument and return a vector. There are several in this library for calculating stability, gain, and otherwise.
 ```@example example_rec
-plotRectangular(amp,testK,label="K Stabilty")
-```
-
-To apply another function, such as `dB`, `real`, or otherwise; supply that function after the network function.
-```@example example_rec
-ax = plotRectangular(amp,testMSG,dB,label="MSG")
-ax["ylabel"] = "dB"
-ax # hide
+plt = plot(amp,testK)
+html_plot(plt) # hide
 ```
 
 #### Plotting with Equation-Driven Networks
-Plotting rectangular plots with equation-driven networks works much the same as plotting with smith charts.
-All of the other functionality for plotting is conserved as well of course.
-
-```@example example_rec
-function inductorAndResistor(L=1e-9,R=30;freq,Z0)
-    z = R + im*2*pi*freq*L
-    return (z-Z0)/(z+Z0)
-end
-RL = EquationNetwork(1,50,inductorAndResistor)
-
-ax = plotRectangular(RL,(1,1),freqs=range(100e6,stop=10e9,length=201))
-plotRectangular!(ax,RL,(1,1),freqs=range(100e6,stop=10e9,length=201),args=(1e-9,50))
-```

@@ -33,9 +33,10 @@ export interpolate
 export complex2angleString
 export equationToDataNetwork
 export mapView3
+export dB
+export dB20
 
 include("Constants.jl")
-include("NetworkParameters.jl") # Needed here for touchstone conversion
 
 abstract type AbstractNetwork end
 
@@ -66,6 +67,12 @@ function mapView3(f,A)
   @views [f(A[:,:,i]) for i in 1:size(A,3)]
 end
 
+dB20(x::Real) = 20*log10(x)
+dB20(x::Complex) = 20*log10(abs(x))
+
+dB(x::Real) = 10*log10(x)
+dB(x::Complex) = 10*log10(abs(x))
+
 """
 The base Network type for representing n-port linear networks with characteristic impedance Z0.
   The S-Parameters for an EquationNetwork are defined by a function that returns a `ports`-square matrix
@@ -87,6 +94,8 @@ mutable struct EquationNetwork <: AbstractNetwork
   end
 end
 
+include("NetworkParameters.jl") # Needed here for touchstone conversion
+
 """
     equationToDataNetwork(equationNet,args=(arg1,arg2),freqs=[1,2,3])
 Utility function to convert an equation network to a data network by evaluating it at every frequency in the list
@@ -96,7 +105,7 @@ function equationToDataNetwork(network;args=(),freqs)
   DataNetwork(network.ports,network.Z0,Array(freqs),[network.eq(args...,Z0=network.Z0,freq = f) for f in freqs])
 end
 
-function Base.show(io::IO,network::AbstractNetwork)
+function Base.show(io::IO,network::T) where {T <: AbstractNetwork}
   if T == DataNetwork
     println(io,"$(network.ports)-Port Network")
     println(io," Z0 = $(network.Z0)")
@@ -357,7 +366,7 @@ K = \\frac{1-|S_{11}|^2-|S_{22}|^2+|\\Delta|^2}{2|S_{12}S_{21}|}
 """
 function testK(network)
   @assert network.ports == 2 "Stability tests must be performed on two port networks"
-  magΔ = testMagΔnetwork)
+  magΔ = testMagΔ(network)
   return @. (1 - abs(network.s_params[1,1,:])^2 - abs(network.s_params[2,2,:])^2 + magΔ^2) /
             (2 * abs(network.s_params[2,1,:] * network.s_params[1,2,:]))
 end
@@ -466,7 +475,7 @@ end
 
 # Sub files, these need to be at the end here such that the files have access
 # to the types defined in this file
-include("MarconiPlots.jl")
 include("Antennas.jl")
+include("MarconiPlots.jl")
 #include("Metamaterials.jl")
 end # Module End
